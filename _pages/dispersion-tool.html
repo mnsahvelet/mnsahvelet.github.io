@@ -1,0 +1,89 @@
+---
+layout: single
+title: "Wave Dispersion Calculator"
+permalink: /tools/dispersion/
+author_profile: true
+---
+
+<p>
+Enter wave period <strong>T</strong> and water depth <strong>h</strong>.
+Outputs are based on the linear dispersion relation:
+ω² = g k tanh(kh)
+</p>
+
+<style>
+#dispersion-tool input[type="number"]{
+  color: #000 !important;
+  background: #fff !important;
+  border: 1px solid #ccc !important;
+  padding: 8px !important;
+  border-radius: 6px !important;
+  width: 100%;
+  max-width: 500px;
+}
+#dispersion-tool button{
+  margin-top: 12px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+#result{
+  margin-top: 15px;
+  padding: 10px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 8px;
+}
+</style>
+
+<div id="dispersion-tool">
+  <label>Wave period T (s)</label>
+  <input type="number" id="T" value="0" step="0.01">
+
+  <label>Water depth h (m)</label>
+  <input type="number" id="h" value="0" step="0.01">
+
+  <br>
+  <button type="button" onclick="compute()">Compute</button>
+
+  <div id="result">Results will appear here.</div>
+</div>
+
+<script>
+function compute() {
+
+  const g = 9.81;
+  const T = parseFloat(document.getElementById("T").value);
+  const h = parseFloat(document.getElementById("h").value);
+  const output = document.getElementById("result");
+
+  if (T <= 0 || h <= 0) {
+      output.innerHTML = "Please enter positive values for T and h.";
+      return;
+  }
+
+  const omega = 2*Math.PI/T;
+  const k0 = (omega*omega)/g;
+
+  function f(k){
+      return omega*omega - g*k*Math.tanh(k*h);
+  }
+
+  let k = k0;
+
+  for(let i=0;i<50;i++){
+      k = k - f(k)/(-g*Math.tanh(k*h) - g*k*h*(1/Math.cosh(k*h))**2);
+  }
+
+  const L = 2*Math.PI/k;
+  const c = omega/k;
+
+  output.innerHTML = `
+  <b>Results:</b><br>
+  Angular frequency ω = ${omega.toFixed(4)} rad/s<br>
+  Wave number k = ${k.toFixed(6)} 1/m<br>
+  Wavelength L = ${L.toFixed(3)} m<br>
+  Phase speed c = ${c.toFixed(3)} m/s
+  `;
+}
+</script>
