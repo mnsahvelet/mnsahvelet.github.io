@@ -7,7 +7,7 @@ author_profile: true
 
 <p>
 Enter wave period <strong>T</strong> and water depth <strong>h</strong>. Outputs are based on the linear dispersion relation:
-\( \omega^2 = g k \tanh(kh) \).
+<span style="white-space:nowrap;">ω² = g k tanh(kh)</span>.
 </p>
 
 <style>
@@ -32,6 +32,7 @@ Enter wave period <strong>T</strong> and water depth <strong>h</strong>. Outputs
   padding: 10px 16px;
   border-radius: 6px;
   border: 1px solid #cfcfcf;
+  cursor: pointer;
 }
 #dispersion-out{
   max-width: 720px;
@@ -65,7 +66,7 @@ Enter wave period <strong>T</strong> and water depth <strong>h</strong>. Outputs
   <label for="h">Water depth h (m)</label>
   <input id="h" type="number" step="0.01" value="0">
 
-  <button type="button" onclick="computeDispersion()">Compute</button>
+  <button type="button" id="btnCompute">Compute</button>
 
   <div id="dispersion-out">
     <div class="ok">Results will appear here after you click <strong>Compute</strong>.</div>
@@ -73,88 +74,93 @@ Enter wave period <strong>T</strong> and water depth <strong>h</strong>. Outputs
 </div>
 
 <script>
-function computeDispersion() {
-  const g = 9.81;
+(function(){
+  // Attach click handler (more reliable than inline onclick in some themes)
+  document.addEventListener("DOMContentLoaded", function(){
+    const btn = document.getElementById("btnCompute");
+    if (btn) btn.addEventListener("click", computeDispersion);
+  });
 
-  const T = parseFloat(document.getElementById("T").value);
-  const h = parseFloat(document.getElementById("h").value);
-  const out = document.getElementById("dispersion-out");
+  function computeDispersion(){
+    const g = 9.81;
 
-  // Validate (you asked default = 0, but computation requires > 0)
-  if (!(T > 0) || !(h > 0)) {
-    out.innerHTML = "<div class='err'><strong>Error:</strong> Please enter positive values for T and h (greater than 0).</div>";
-    return;
-  }
+    const T = parseFloat(document.getElementById("T").value);
+    const h = parseFloat(document.getElementById("h").value);
+    const out = document.getElementById("dispersion-out");
 
-  const omega = 2 * Math.PI / T;
-
-  // Match your MATLAB approach: bracket around deep-water guess and solve
-  // f(k) = omega^2 - g k tanh(kh) = 0
-  function f(k){
-    return omega*omega - g*k*Math.tanh(k*h);
-  }
-
-  // Deep-water initial guess (k0)
-  const k0 = (omega*omega)/g;
-
-  // Bracket like your code: [max(1e-6, 0.1*k0), 10*k0 + 1e-6]
-  let klo = Math.max(1e-6, 0.1*k0);
-  let khi = 10*k0 + 1e-6;
-
-  // Ensure the bracket actually brackets a root (sign change).
-  // If not, expand upper bound a few times.
-  let flo = f(klo);
-  let fhi = f(khi);
-
-  let expandCount = 0;
-  while (flo*fhi > 0 && expandCount < 20) {
-    khi *= 2.0;
-    fhi = f(khi);
-    expandCount++;
-  }
-
-  if (flo*fhi > 0) {
-    out.innerHTML = "<div class='err'><strong>Error:</strong> Could not bracket the solution. Try different T and h.</div>";
-    return;
-  }
-
-  // Bisection (robust) within bracket
-  let k = 0.5*(klo + khi);
-  for (let i=0; i<80; i++){
-    k = 0.5*(klo + khi);
-    const fk = f(k);
-    if (Math.abs(fk) < 1e-12) break;
-    if (flo*fk < 0) {
-      khi = k;
-      fhi = fk;
-    } else {
-      klo = k;
-      flo = fk;
+    if (!(T > 0) || !(h > 0)) {
+      out.innerHTML = "<div class='err'><strong>Error:</strong> Please enter positive values for T and h (greater than 0).</div>";
+      return;
     }
-    if (Math.abs(khi - klo) < 1e-12*Math.max(1, Math.abs(k))) break;
+
+    const omega = 2 * Math.PI / T;
+
+    // MATLAB-style bracket based on deep-water guess
+    const k0 = (omega*omega)/g;
+
+    function f(k){
+      return omega*omega - g*k*Math.tanh(k*h);
+    }
+
+    let klo = Math.max(1e-6, 0.1*k0);
+    let khi = 10*k0 + 1e-6;
+
+    let flo = f(klo);
+    let fhi = f(khi);
+
+    // Expand upper bracket if needed
+    let expand = 0;
+    while (flo*fhi > 0 && expand < 30) {
+      khi *= 2.0;
+      fhi = f(khi);
+      expand++;
+    }
+
+    if (flo*fhi > 0) {
+      out.innerHTML = "<div class='err'><strong>Error:</strong> Could not bracket the solution. Try different T and h.</div>";
+      return;
+    }
+
+    // Bisection solve (robust)
+    let k = 0.5*(klo + khi);
+    for (let i=0; i<100; i++){
+      k = 0.5*(klo + khi);
+      const fk = f(k);
+      if (Math.abs(fk) < 1e-12) break;
+
+      if (flo*fk < 0) {
+        khi = k;
+        fhi = fk;
+      } else {
+        klo = k;
+        flo = fk;
+      }
+
+      if (Math.abs(khi - klo) < 1e-12*Math.max(1, Math.abs(k))) break;
+    }
+
+    const L  = 2*Math.PI / k;
+    const c  = omega / k;
+
+    const kh = k*h;
+    const n  = 0.5 * (1 + (2*kh)/Math.sinh(2*kh));
+    const cg = n*c;
+
+    let regime = "Intermediate depth";
+    if (kh < 0.5) regime = "Shallow water (kh < 0.5)";
+    if (kh > 3.0) regime = "Deep water (kh > 3)";
+
+    out.innerHTML = `
+      <div class="ok"><strong>Results</strong></div>
+      <table>
+        <tr><td>ω (rad/s)</td><td>${omega.toFixed(6)}</td></tr>
+        <tr><td>k (1/m)</td><td>${k.toFixed(10)}</td></tr>
+        <tr><td>L (m)</td><td>${L.toFixed(4)}</td></tr>
+        <tr><td>c (m/s)</td><td>${c.toFixed(4)}</td></tr>
+        <tr><td>c<sub>g</sub> (m/s)</td><td>${cg.toFixed(4)}</td></tr>
+        <tr><td>kh (-)</td><td>${kh.toFixed(4)} &nbsp; <span style="opacity:0.9;">${regime}</span></td></tr>
+      </table>
+    `;
   }
-
-  const L  = 2*Math.PI / k;
-  const c  = omega / k;
-
-  const kh = k*h;
-  const n  = 0.5 * (1 + (2*kh)/Math.sinh(2*kh)); // group factor
-  const cg = n*c;
-
-  let regime = "Intermediate depth";
-  if (kh < 0.5) regime = "Shallow water (kh < 0.5)";
-  if (kh > 3.0) regime = "Deep water (kh > 3)";
-
-  out.innerHTML = `
-    <div class="ok"><strong>Results</strong></div>
-    <table>
-      <tr><td>ω (rad/s)</td><td>${omega.toFixed(6)}</td></tr>
-      <tr><td>k (1/m)</td><td>${k.toFixed(10)}</td></tr>
-      <tr><td>L (m)</td><td>${L.toFixed(4)}</td></tr>
-      <tr><td>c (m/s)</td><td>${c.toFixed(4)}</td></tr>
-      <tr><td>c<sub>g</sub> (m/s)</td><td>${cg.toFixed(4)}</td></tr>
-      <tr><td>kh (-)</td><td>${kh.toFixed(4)} &nbsp; <span style="opacity:0.9;">${regime}</span></td></tr>
-    </table>
-  `;
-}
+})();
 </script>
