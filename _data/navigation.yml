@@ -25,4 +25,7 @@ main:
     
   - title: "CV"
     url: /cv/
-    
+
+      - title: "Tools"
+    url: /tools/dispersion/
+
