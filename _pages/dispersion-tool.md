@@ -5,77 +5,156 @@ permalink: /tools/dispersion/
 author_profile: true
 ---
 
-<p>Enter wave period <strong>T</strong> and water depth <strong>h</strong>. Outputs are based on the linear dispersion relation: ω² = g k tanh(kh).</p>
+<p>
+Enter wave period <strong>T</strong> and water depth <strong>h</strong>. Outputs are based on the linear dispersion relation:
+\( \omega^2 = g k \tanh(kh) \).
+</p>
 
-<div style="max-width: 520px;">
-  <label>Wave period T (s)</label><br>
-  <input id="T" type="number" step="0.01" value="8.0" style="width: 100%; padding: 8px; margin: 6px 0 12px 0;">
+<style>
+/* Make inputs readable in this theme */
+#dispersion-tool input[type="number"]{
+  color: #000 !important;
+  background: #fff !important;
+  border: 1px solid #cfcfcf !important;
+  padding: 10px !important;
+  border-radius: 6px !important;
+  width: 100% !important;
+  max-width: 520px !important;
+  font-size: 16px !important;
+}
+#dispersion-tool label{
+  display:block;
+  margin: 10px 0 6px 0;
+  font-weight: 600;
+}
+#dispersion-tool button{
+  margin-top: 14px;
+  padding: 10px 16px;
+  border-radius: 6px;
+  border: 1px solid #cfcfcf;
+}
+#dispersion-out{
+  max-width: 720px;
+  margin-top: 18px;
+  padding: 14px 16px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 10px;
+}
+#dispersion-out .err{ color: #ffb3b3; }
+#dispersion-out .ok  { color: #eaeaea; }
+#dispersion-out table{
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+#dispersion-out td{
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.10);
+}
+#dispersion-out td:first-child{
+  width: 35%;
+  opacity: 0.95;
+}
+</style>
 
-  <label>Water depth h (m)</label><br>
-  <input id="h" type="number" step="0.01" value="10.0" style="width: 100%; padding: 8px; margin: 6px 0 12px 0;">
+<div id="dispersion-tool">
+  <label for="T">Wave period T (s)</label>
+  <input id="T" type="number" step="0.01" value="0">
 
-  <button onclick="computeDispersion()" style="padding: 10px 14px;">Compute</button>
+  <label for="h">Water depth h (m)</label>
+  <input id="h" type="number" step="0.01" value="0">
+
+  <button type="button" onclick="computeDispersion()">Compute</button>
+
+  <div id="dispersion-out">
+    <div class="ok">Results will appear here after you click <strong>Compute</strong>.</div>
+  </div>
 </div>
-
-<div id="out" style="margin-top: 16px;"></div>
 
 <script>
 function computeDispersion() {
   const g = 9.81;
+
   const T = parseFloat(document.getElementById("T").value);
   const h = parseFloat(document.getElementById("h").value);
+  const out = document.getElementById("dispersion-out");
 
+  // Validate (you asked default = 0, but computation requires > 0)
   if (!(T > 0) || !(h > 0)) {
-    document.getElementById("out").innerHTML = "<p style='color:#d33;'>Please enter positive values for T and h.</p>";
+    out.innerHTML = "<div class='err'><strong>Error:</strong> Please enter positive values for T and h (greater than 0).</div>";
     return;
   }
 
   const omega = 2 * Math.PI / T;
 
-  // Solve dispersion: f(k) = g k tanh(kh) - omega^2 = 0  via Newton-Raphson
-  // Initial guess: deep water k0 = omega^2 / g
-  let k = (omega * omega) / g;
-  const maxIter = 50;
-  const tol = 1e-12;
-
-  for (let i = 0; i < maxIter; i++) {
-    const kh = k * h;
-    const t = Math.tanh(kh);
-    const sech = 1 / Math.cosh(kh);
-    const sech2 = sech * sech;
-
-    const f = g * k * t - omega * omega;
-    const df = g * t + g * k * h * sech2;
-
-    const dk = -f / df;
-    k += dk;
-
-    if (Math.abs(dk) < tol * Math.max(1, Math.abs(k))) break;
+  // Match your MATLAB approach: bracket around deep-water guess and solve
+  // f(k) = omega^2 - g k tanh(kh) = 0
+  function f(k){
+    return omega*omega - g*k*Math.tanh(k*h);
   }
 
-  const L = 2 * Math.PI / k;
-  const c = omega / k;
+  // Deep-water initial guess (k0)
+  const k0 = (omega*omega)/g;
 
-  const kh = k * h;
-  const t = Math.tanh(kh);
-  const n = 0.5 * (1 + (2 * kh) / Math.sinh(2 * kh)); // group factor
-  const cg = n * c;
+  // Bracket like your code: [max(1e-6, 0.1*k0), 10*k0 + 1e-6]
+  let klo = Math.max(1e-6, 0.1*k0);
+  let khi = 10*k0 + 1e-6;
+
+  // Ensure the bracket actually brackets a root (sign change).
+  // If not, expand upper bound a few times.
+  let flo = f(klo);
+  let fhi = f(khi);
+
+  let expandCount = 0;
+  while (flo*fhi > 0 && expandCount < 20) {
+    khi *= 2.0;
+    fhi = f(khi);
+    expandCount++;
+  }
+
+  if (flo*fhi > 0) {
+    out.innerHTML = "<div class='err'><strong>Error:</strong> Could not bracket the solution. Try different T and h.</div>";
+    return;
+  }
+
+  // Bisection (robust) within bracket
+  let k = 0.5*(klo + khi);
+  for (let i=0; i<80; i++){
+    k = 0.5*(klo + khi);
+    const fk = f(k);
+    if (Math.abs(fk) < 1e-12) break;
+    if (flo*fk < 0) {
+      khi = k;
+      fhi = fk;
+    } else {
+      klo = k;
+      flo = fk;
+    }
+    if (Math.abs(khi - klo) < 1e-12*Math.max(1, Math.abs(k))) break;
+  }
+
+  const L  = 2*Math.PI / k;
+  const c  = omega / k;
+
+  const kh = k*h;
+  const n  = 0.5 * (1 + (2*kh)/Math.sinh(2*kh)); // group factor
+  const cg = n*c;
 
   let regime = "Intermediate depth";
   if (kh < 0.5) regime = "Shallow water (kh < 0.5)";
   if (kh > 3.0) regime = "Deep water (kh > 3)";
 
-  document.getElementById("out").innerHTML = `
-    <hr>
-    <p><strong>Results</strong></p>
-    <ul>
-      <li>ω = ${omega.toFixed(6)} rad/s</li>
-      <li>k = ${k.toFixed(8)} 1/m</li>
-      <li>L = ${L.toFixed(3)} m</li>
-      <li>c = ${c.toFixed(3)} m/s</li>
-      <li>c<sub>g</sub> = ${cg.toFixed(3)} m/s</li>
-      <li>kh = ${kh.toFixed(3)} (${regime})</li>
-    </ul>
+  out.innerHTML = `
+    <div class="ok"><strong>Results</strong></div>
+    <table>
+      <tr><td>ω (rad/s)</td><td>${omega.toFixed(6)}</td></tr>
+      <tr><td>k (1/m)</td><td>${k.toFixed(10)}</td></tr>
+      <tr><td>L (m)</td><td>${L.toFixed(4)}</td></tr>
+      <tr><td>c (m/s)</td><td>${c.toFixed(4)}</td></tr>
+      <tr><td>c<sub>g</sub> (m/s)</td><td>${cg.toFixed(4)}</td></tr>
+      <tr><td>kh (-)</td><td>${kh.toFixed(4)} &nbsp; <span style="opacity:0.9;">${regime}</span></td></tr>
+    </table>
   `;
 }
 </script>
