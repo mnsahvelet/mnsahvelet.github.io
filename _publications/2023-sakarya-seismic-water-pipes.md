@@ -1,5 +1,5 @@
 ---
-title: "Seismic Vulnerability Assessment of Drinking Water Pipelines in Sakarya Province"
+title: "Seismic Vulnerability Assessment of Buried Water Pipelines in Sakarya Province"
 collection: publications
 category: manuscripts
 permalink: /publication/sakarya-seismic-water-pipes/
