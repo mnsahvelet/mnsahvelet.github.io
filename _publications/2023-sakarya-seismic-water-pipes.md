@@ -1,12 +1,15 @@
 ---
 title: "Seismic Vulnerability Assessment of Drinking Water Pipelines in Sakarya Province"
 collection: publications
+category: manuscripts
 permalink: /publication/sakarya-seismic-water-pipes/
 date: 2023-04-30
 venue: "Uludağ Üniversitesi Mühendislik Fakültesi Dergisi"
 paperurl: "https://doi.org/10.17482/uumfd.1127102"
 citation: "Şahvelet, M. N., & Doğan, E. (2023). Sakarya İli İçme Suyu Borularının Sismik Hasar Görebilirliklerinin İncelenmesi. Uludağ Üniversitesi Mühendislik Fakültesi Dergisi, 28(1), 233–252. https://doi.org/10.17482/uumfd.1127102"
 ---
+
+
 
 ### Abstract (English)
 
