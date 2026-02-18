@@ -71,16 +71,28 @@ Enter wave period <strong>T</strong> and water depth <strong>h</strong>. Outputs
     <div class="ok">Results will appear here after you click <strong>Compute</strong>.</div>
   </div>
 </div>
-
 <script>
-(function(){
-  // Attach click handler
-  document.addEventListener("DOMContentLoaded", function(){
+(function () {
+  function initDispersionTool() {
     const btn = document.getElementById("btnCompute");
-    if (btn) btn.addEventListener("click", computeDispersion);
-  });
+    const out = document.getElementById("dispersion-out");
 
-  function computeDispersion(){
+    // If the elements are not on the page yet, do nothing.
+    if (!btn || !out) return;
+
+    // Avoid attaching multiple listeners if the page is reloaded via fast navigation
+    if (btn.dataset.bound === "true") return;
+    btn.dataset.bound = "true";
+
+    // Backup: direct onclick + addEventListener
+    btn.onclick = computeDispersion;
+    btn.addEventListener("click", computeDispersion);
+
+    // Optional: make it obvious JS is alive (you can remove later)
+    // out.innerHTML = "<div class='ok'>Ready. Enter T and h and click <strong>Compute</strong>.</div>";
+  }
+
+  function computeDispersion() {
     const g = 9.81;
 
     const T = parseFloat(document.getElementById("T").value);
@@ -88,46 +100,46 @@ Enter wave period <strong>T</strong> and water depth <strong>h</strong>. Outputs
     const out = document.getElementById("dispersion-out");
 
     if (!(T > 0) || !(h > 0)) {
-      out.innerHTML = "<div class='err'><strong>Error:</strong> Please enter positive values for T and h (greater than 0).</div>";
+      out.innerHTML =
+        "<div class='err'><strong>Error:</strong> Please enter positive values for T and h (greater than 0).</div>";
       return;
     }
 
-    const omega = 2 * Math.PI / T;
+    const omega = (2 * Math.PI) / T;
+    const k0 = (omega * omega) / g;
 
-    // Deep-water guess
-    const k0 = (omega*omega)/g;
-
-    function f(k){
-      return omega*omega - g*k*Math.tanh(k*h);
+    function f(k) {
+      return omega * omega - g * k * Math.tanh(k * h);
     }
 
-    let klo = Math.max(1e-6, 0.1*k0);
-    let khi = 10*k0 + 1e-6;
+    let klo = Math.max(1e-6, 0.1 * k0);
+    let khi = 10 * k0 + 1e-6;
 
     let flo = f(klo);
     let fhi = f(khi);
 
-    // Expand upper bracket if needed
     let expand = 0;
-    while (flo*fhi > 0 && expand < 30) {
+    while (flo * fhi > 0 && expand < 40) {
       khi *= 2.0;
       fhi = f(khi);
       expand++;
     }
 
-    if (flo*fhi > 0) {
-      out.innerHTML = "<div class='err'><strong>Error:</strong> Could not bracket the solution. Try different T and h.</div>";
+    if (flo * fhi > 0) {
+      out.innerHTML =
+        "<div class='err'><strong>Error:</strong> Could not bracket the solution. Try different T and h.</div>";
       return;
     }
 
-    // Bisection solve
-    let k = 0.5*(klo + khi);
-    for (let i=0; i<120; i++){
-      k = 0.5*(klo + khi);
+    // Bisection
+    let k = 0.5 * (klo + khi);
+    for (let i = 0; i < 140; i++) {
+      k = 0.5 * (klo + khi);
       const fk = f(k);
+
       if (Math.abs(fk) < 1e-12) break;
 
-      if (flo*fk < 0) {
+      if (flo * fk < 0) {
         khi = k;
         fhi = fk;
       } else {
@@ -135,15 +147,15 @@ Enter wave period <strong>T</strong> and water depth <strong>h</strong>. Outputs
         flo = fk;
       }
 
-      if (Math.abs(khi - klo) < 1e-12*Math.max(1, Math.abs(k))) break;
+      if (Math.abs(khi - klo) < 1e-12 * Math.max(1, Math.abs(k))) break;
     }
 
-    const L  = 2*Math.PI / k;
-    const c  = omega / k;
+    const L = (2 * Math.PI) / k;
+    const c = omega / k;
 
-    const kh = k*h;
-    const n  = 0.5 * (1 + (2*kh)/Math.sinh(2*kh));
-    const cg = n*c;
+    const kh = k * h;
+    const n = 0.5 * (1 + (2 * kh) / Math.sinh(2 * kh));
+    const cg = n * c;
 
     let regime = "Intermediate depth";
     if (kh < 0.5) regime = "Shallow water (kh < 0.5)";
@@ -161,5 +173,15 @@ Enter wave period <strong>T</strong> and water depth <strong>h</strong>. Outputs
       </table>
     `;
   }
+
+  // Works for normal loads + “fast” navigation + back/forward cache
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initDispersionTool);
+  } else {
+    initDispersionTool();
+  }
+  document.addEventListener("turbolinks:load", initDispersionTool);
+  document.addEventListener("turbo:load", initDispersionTool);
+  window.addEventListener("pageshow", initDispersionTool);
 })();
 </script>
