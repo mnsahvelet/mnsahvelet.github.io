@@ -6,84 +6,160 @@ author_profile: true
 ---
 
 <p>
-Enter wave period <strong>T</strong> and water depth <strong>h</strong>.
-Outputs are based on the linear dispersion relation:
-ω² = g k tanh(kh)
+Enter wave period <strong>T</strong> and water depth <strong>h</strong>. Outputs are based on the linear dispersion relation:
+<span style="white-space:nowrap;">ω² = g k tanh(kh)</span>.
 </p>
 
 <style>
 #dispersion-tool input[type="number"]{
   color: #000 !important;
   background: #fff !important;
-  border: 1px solid #ccc !important;
-  padding: 8px !important;
+  border: 1px solid #cfcfcf !important;
+  padding: 10px !important;
   border-radius: 6px !important;
-  width: 100%;
-  max-width: 500px;
+  width: 100% !important;
+  max-width: 520px !important;
+  font-size: 16px !important;
+}
+#dispersion-tool label{
+  display:block;
+  margin: 10px 0 6px 0;
+  font-weight: 600;
 }
 #dispersion-tool button{
-  margin-top: 12px;
-  padding: 8px 14px;
+  margin-top: 14px;
+  padding: 10px 16px;
   border-radius: 6px;
-  border: 1px solid #ccc;
+  border: 1px solid #cfcfcf;
   cursor: pointer;
 }
-#result{
-  margin-top: 15px;
-  padding: 10px;
-  background: rgba(255,255,255,0.08);
-  border-radius: 8px;
+#dispersion-out{
+  max-width: 720px;
+  margin-top: 18px;
+  padding: 14px 16px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 10px;
+}
+#dispersion-out .err{ color: #ffb3b3; }
+#dispersion-out .ok  { color: #eaeaea; }
+#dispersion-out table{
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+#dispersion-out td{
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.10);
+}
+#dispersion-out td:first-child{
+  width: 35%;
+  opacity: 0.95;
 }
 </style>
 
 <div id="dispersion-tool">
-  <label>Wave period T (s)</label>
-  <input type="number" id="T" value="0" step="0.01">
+  <label for="T">Wave period T (s)</label>
+  <input id="T" type="number" step="0.01" value="0">
 
-  <label>Water depth h (m)</label>
-  <input type="number" id="h" value="0" step="0.01">
+  <label for="h">Water depth h (m)</label>
+  <input id="h" type="number" step="0.01" value="0">
 
-  <br>
-  <button type="button" onclick="compute()">Compute</button>
+  <button type="button" id="btnCompute">Compute</button>
 
-  <div id="result">Results will appear here.</div>
+  <div id="dispersion-out">
+    <div class="ok">Results will appear here after you click <strong>Compute</strong>.</div>
+  </div>
 </div>
 
 <script>
-function compute() {
+(function(){
+  // Attach click handler
+  document.addEventListener("DOMContentLoaded", function(){
+    const btn = document.getElementById("btnCompute");
+    if (btn) btn.addEventListener("click", computeDispersion);
+  });
 
-  const g = 9.81;
-  const T = parseFloat(document.getElementById("T").value);
-  const h = parseFloat(document.getElementById("h").value);
-  const output = document.getElementById("result");
+  function computeDispersion(){
+    const g = 9.81;
 
-  if (T <= 0 || h <= 0) {
-      output.innerHTML = "Please enter positive values for T and h.";
+    const T = parseFloat(document.getElementById("T").value);
+    const h = parseFloat(document.getElementById("h").value);
+    const out = document.getElementById("dispersion-out");
+
+    if (!(T > 0) || !(h > 0)) {
+      out.innerHTML = "<div class='err'><strong>Error:</strong> Please enter positive values for T and h (greater than 0).</div>";
       return;
-  }
+    }
 
-  const omega = 2*Math.PI/T;
-  const k0 = (omega*omega)/g;
+    const omega = 2 * Math.PI / T;
 
-  function f(k){
+    // Deep-water guess
+    const k0 = (omega*omega)/g;
+
+    function f(k){
       return omega*omega - g*k*Math.tanh(k*h);
+    }
+
+    let klo = Math.max(1e-6, 0.1*k0);
+    let khi = 10*k0 + 1e-6;
+
+    let flo = f(klo);
+    let fhi = f(khi);
+
+    // Expand upper bracket if needed
+    let expand = 0;
+    while (flo*fhi > 0 && expand < 30) {
+      khi *= 2.0;
+      fhi = f(khi);
+      expand++;
+    }
+
+    if (flo*fhi > 0) {
+      out.innerHTML = "<div class='err'><strong>Error:</strong> Could not bracket the solution. Try different T and h.</div>";
+      return;
+    }
+
+    // Bisection solve
+    let k = 0.5*(klo + khi);
+    for (let i=0; i<120; i++){
+      k = 0.5*(klo + khi);
+      const fk = f(k);
+      if (Math.abs(fk) < 1e-12) break;
+
+      if (flo*fk < 0) {
+        khi = k;
+        fhi = fk;
+      } else {
+        klo = k;
+        flo = fk;
+      }
+
+      if (Math.abs(khi - klo) < 1e-12*Math.max(1, Math.abs(k))) break;
+    }
+
+    const L  = 2*Math.PI / k;
+    const c  = omega / k;
+
+    const kh = k*h;
+    const n  = 0.5 * (1 + (2*kh)/Math.sinh(2*kh));
+    const cg = n*c;
+
+    let regime = "Intermediate depth";
+    if (kh < 0.5) regime = "Shallow water (kh < 0.5)";
+    if (kh > 3.0) regime = "Deep water (kh > 3)";
+
+    out.innerHTML = `
+      <div class="ok"><strong>Results</strong></div>
+      <table>
+        <tr><td>ω (rad/s)</td><td>${omega.toFixed(6)}</td></tr>
+        <tr><td>k (1/m)</td><td>${k.toFixed(10)}</td></tr>
+        <tr><td>L (m)</td><td>${L.toFixed(4)}</td></tr>
+        <tr><td>c (m/s)</td><td>${c.toFixed(4)}</td></tr>
+        <tr><td>c<sub>g</sub> (m/s)</td><td>${cg.toFixed(4)}</td></tr>
+        <tr><td>kh (-)</td><td>${kh.toFixed(4)} &nbsp; <span style="opacity:0.9;">${regime}</span></td></tr>
+      </table>
+    `;
   }
-
-  let k = k0;
-
-  for(let i=0;i<50;i++){
-      k = k - f(k)/(-g*Math.tanh(k*h) - g*k*h*(1/Math.cosh(k*h))**2);
-  }
-
-  const L = 2*Math.PI/k;
-  const c = omega/k;
-
-  output.innerHTML = `
-  <b>Results:</b><br>
-  Angular frequency ω = ${omega.toFixed(4)} rad/s<br>
-  Wave number k = ${k.toFixed(6)} 1/m<br>
-  Wavelength L = ${L.toFixed(3)} m<br>
-  Phase speed c = ${c.toFixed(3)} m/s
-  `;
-}
+})();
 </script>
