@@ -72,116 +72,72 @@ Enter wave period <strong>T</strong> and water depth <strong>h</strong>. Outputs
   </div>
 </div>
 <script>
-(function () {
-  function initDispersionTool() {
-    const btn = document.getElementById("btnCompute");
-    const out = document.getElementById("dispersion-out");
+function computeDispersion(){
+  const g = 9.81;
 
-    // If the elements are not on the page yet, do nothing.
-    if (!btn || !out) return;
+  const T = parseFloat(document.getElementById("T").value);
+  const h = parseFloat(document.getElementById("h").value);
+  const out = document.getElementById("dispersion-out");
 
-    // Avoid attaching multiple listeners if the page is reloaded via fast navigation
-    if (btn.dataset.bound === "true") return;
-    btn.dataset.bound = "true";
-
-    // Backup: direct onclick + addEventListener
-    btn.onclick = computeDispersion;
-    btn.addEventListener("click", computeDispersion);
-
-    // Optional: make it obvious JS is alive (you can remove later)
-    // out.innerHTML = "<div class='ok'>Ready. Enter T and h and click <strong>Compute</strong>.</div>";
+  if (!(T > 0) || !(h > 0)) {
+    out.innerHTML = "<div style='color:#ffb3b3'><strong>Error:</strong> Please enter positive values.</div>";
+    return;
   }
 
-  function computeDispersion() {
-    const g = 9.81;
+  const omega = 2 * Math.PI / T;
+  const k0 = (omega*omega)/g;
 
-    const T = parseFloat(document.getElementById("T").value);
-    const h = parseFloat(document.getElementById("h").value);
-    const out = document.getElementById("dispersion-out");
-
-    if (!(T > 0) || !(h > 0)) {
-      out.innerHTML =
-        "<div class='err'><strong>Error:</strong> Please enter positive values for T and h (greater than 0).</div>";
-      return;
-    }
-
-    const omega = (2 * Math.PI) / T;
-    const k0 = (omega * omega) / g;
-
-    function f(k) {
-      return omega * omega - g * k * Math.tanh(k * h);
-    }
-
-    let klo = Math.max(1e-6, 0.1 * k0);
-    let khi = 10 * k0 + 1e-6;
-
-    let flo = f(klo);
-    let fhi = f(khi);
-
-    let expand = 0;
-    while (flo * fhi > 0 && expand < 40) {
-      khi *= 2.0;
-      fhi = f(khi);
-      expand++;
-    }
-
-    if (flo * fhi > 0) {
-      out.innerHTML =
-        "<div class='err'><strong>Error:</strong> Could not bracket the solution. Try different T and h.</div>";
-      return;
-    }
-
-    // Bisection
-    let k = 0.5 * (klo + khi);
-    for (let i = 0; i < 140; i++) {
-      k = 0.5 * (klo + khi);
-      const fk = f(k);
-
-      if (Math.abs(fk) < 1e-12) break;
-
-      if (flo * fk < 0) {
-        khi = k;
-        fhi = fk;
-      } else {
-        klo = k;
-        flo = fk;
-      }
-
-      if (Math.abs(khi - klo) < 1e-12 * Math.max(1, Math.abs(k))) break;
-    }
-
-    const L = (2 * Math.PI) / k;
-    const c = omega / k;
-
-    const kh = k * h;
-    const n = 0.5 * (1 + (2 * kh) / Math.sinh(2 * kh));
-    const cg = n * c;
-
-    let regime = "Intermediate depth";
-    if (kh < 0.5) regime = "Shallow water (kh < 0.5)";
-    if (kh > 3.0) regime = "Deep water (kh > 3)";
-
-    out.innerHTML = `
-      <div class="ok"><strong>Results</strong></div>
-      <table>
-        <tr><td>ω (rad/s)</td><td>${omega.toFixed(6)}</td></tr>
-        <tr><td>k (1/m)</td><td>${k.toFixed(10)}</td></tr>
-        <tr><td>L (m)</td><td>${L.toFixed(4)}</td></tr>
-        <tr><td>c (m/s)</td><td>${c.toFixed(4)}</td></tr>
-        <tr><td>c<sub>g</sub> (m/s)</td><td>${cg.toFixed(4)}</td></tr>
-        <tr><td>kh (-)</td><td>${kh.toFixed(4)} &nbsp; <span style="opacity:0.9;">${regime}</span></td></tr>
-      </table>
-    `;
+  function f(k){
+    return omega*omega - g*k*Math.tanh(k*h);
   }
 
-  // Works for normal loads + “fast” navigation + back/forward cache
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initDispersionTool);
-  } else {
-    initDispersionTool();
+  let klo = Math.max(1e-6, 0.1*k0);
+  let khi = 10*k0 + 1e-6;
+
+  let flo = f(klo);
+  let fhi = f(khi);
+
+  let expand = 0;
+  while (flo*fhi > 0 && expand < 40) {
+    khi *= 2;
+    fhi = f(khi);
+    expand++;
   }
-  document.addEventListener("turbolinks:load", initDispersionTool);
-  document.addEventListener("turbo:load", initDispersionTool);
-  window.addEventListener("pageshow", initDispersionTool);
-})();
+
+  if (flo*fhi > 0) {
+    out.innerHTML = "<div style='color:#ffb3b3'><strong>Error:</strong> Could not bracket solution.</div>";
+    return;
+  }
+
+  let k;
+  for (let i=0; i<120; i++){
+    k = 0.5*(klo + khi);
+    const fk = f(k);
+    if (Math.abs(fk) < 1e-12) break;
+    if (flo*fk < 0) {
+      khi = k;
+      fhi = fk;
+    } else {
+      klo = k;
+      flo = fk;
+    }
+  }
+
+  const L  = 2*Math.PI / k;
+  const c  = omega / k;
+  const kh = k*h;
+  const n  = 0.5 * (1 + (2*kh)/Math.sinh(2*kh));
+  const cg = n*c;
+
+  out.innerHTML = `
+    <h3>Results</h3>
+    <p>ω = ${omega.toFixed(6)} rad/s</p>
+    <p>k = ${k.toFixed(8)} 1/m</p>
+    <p>L = ${L.toFixed(4)} m</p>
+    <p>c = ${c.toFixed(4)} m/s</p>
+    <p>c<sub>g</sub> = ${cg.toFixed(4)} m/s</p>
+    <p>kh = ${kh.toFixed(4)}</p>
+  `;
+}
 </script>
+
