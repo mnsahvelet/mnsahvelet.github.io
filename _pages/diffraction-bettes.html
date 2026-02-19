@@ -1,684 +1,646 @@
 ---
-layout: single
-title: "Semi-Infinite Breakwater Diffraction (Bettes)"
+title: "Diffraction Calculator: Semi-infinite Breakwater (Bettes)"
 permalink: /tools/diffraction/bettes/
-author_profile: false
+layout: single
+author_profile: true
 ---
 
 <style>
   .tool-wrap{
-    display:grid;
-    grid-template-columns: 320px 1fr;
-    gap:16px;
-    align-items:start;
-    margin-top: 12px;
+    max-width: 980px;
+    margin: 0 auto;
+  }
+  .tool-title{
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0 0 0.4rem 0;
+  }
+  .tool-sub{
+    margin: 0 0 1.2rem 0;
+    opacity: 0.9;
+  }
+  .tool-grid{
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 18px;
+    align-items: start;
   }
   .panel{
-    border:1px solid #cfcfcf;
-    border-radius:10px;
-    padding:14px 14px 10px 14px;
-    background:#ffffff;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    padding: 14px;
   }
   .panel h3{
-    margin:0 0 10px 0;
-    font-size:16px;
+    margin: 0 0 10px 0;
+    font-size: 1.05rem;
   }
   .row{
-    display:grid;
+    display: grid;
     grid-template-columns: 1fr 120px;
-    gap:10px;
-    align-items:center;
-    margin:8px 0;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 10px;
   }
   .row label{
-    font-size:13px;
+    font-weight: 600;
   }
   .row input{
-    width:120px;
-    padding:6px 8px;
-    border:1px solid #c9c9c9;
-    border-radius:6px;
-    font-size:13px;
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(0,0,0,0.20);
+    color: inherit;
   }
-  .row .small{
-    font-size:12px;
-    color:#555;
+  .row small{
+    opacity: 0.85;
+    font-weight: 400;
   }
-  .row-inline{
-    display:flex;
-    gap:10px;
-    align-items:center;
-    margin:10px 0 6px 0;
-  }
-  .row-inline input[type="checkbox"]{
-    transform: scale(1.05);
+  .row-2{
+    display: grid;
+    grid-template-columns: 1fr;
+    margin-top: 8px;
+    margin-bottom: 8px;
   }
   .btn{
-    width:100%;
-    margin-top:10px;
-    padding:10px 12px;
-    border:1px solid #2b2b2b;
-    border-radius:10px;
-    background:#0b0b0b;
-    color:#ffffff;
-    font-weight:600;
-    cursor:pointer;
+    display: inline-block;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.20);
+    background: rgba(255,255,255,0.10);
+    color: inherit;
+    cursor: pointer;
+    font-weight: 700;
   }
-  .btn:active{ transform: translateY(1px); }
-  .outbox{
-    margin-top:12px;
-    border-top:1px solid #e1e1e1;
-    padding-top:10px;
-  }
-  .outgrid{
-    display:grid;
-    grid-template-columns: 1fr 1fr;
-    gap:8px 12px;
-    font-size:13px;
-  }
-  .kv{
-    display:flex;
-    justify-content:space-between;
-    gap:10px;
-    padding:6px 8px;
-    border:1px dashed #d6d6d6;
-    border-radius:8px;
-    background:#fafafa;
-  }
-  .kv b{ font-weight:600; }
-  .plot-panel{
-    border:1px solid #cfcfcf;
-    border-radius:10px;
-    background:#fff;
-    padding:10px;
-  }
-  .plot-top{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    gap:10px;
-    margin:2px 2px 8px 2px;
-  }
-  .plot-title{
-    font-size:14px;
-    font-weight:600;
+  .btn:disabled{
+    opacity: 0.6;
+    cursor: not-allowed;
   }
   .note{
-    font-size:12px;
-    color:#555;
+    font-size: 0.92rem;
+    opacity: 0.9;
+    line-height: 1.35;
   }
-  canvas{
-    width:100%;
-    height:auto;
-    border:1px solid #e3e3e3;
-    border-radius:10px;
-    background:#ffffff;
+  .results{
+    font-size: 0.95rem;
+    border-collapse: collapse;
+    width: 100%;
+  }
+  .results td{
+    padding: 6px 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.10);
+    vertical-align: top;
+  }
+  .results td:first-child{
+    width: 140px;
+    opacity: 0.9;
+  }
+  .canvas-wrap{
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(0,0,0,0.22);
+  }
+  canvas{ display:block; width:100%; height:auto; }
+  .status{
+    margin-top: 10px;
+    opacity: 0.9;
+    font-size: 0.92rem;
   }
   .legend{
     display:flex;
-    gap:10px;
     align-items:center;
-    margin-top:8px;
-    font-size:12px;
-    color:#333;
+    gap:10px;
+    margin-top: 10px;
   }
-  .legend canvas{
-    width:220px;
-    height:14px;
-    border-radius:6px;
+  .legend-bar{
+    height: 10px;
+    flex: 1;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.18);
+    background: linear-gradient(90deg, #30123b, #4145ab, #2a7ab9, #1aa287, #5ec962, #b8de29, #fde725);
   }
-  .warn{
-    margin-top:10px;
-    font-size:12px;
-    color:#7a1d1d;
-    background:#fff3f3;
-    border:1px solid #ffd0d0;
-    padding:8px 10px;
-    border-radius:10px;
-    display:none;
+  .legend-label{
+    font-size: 0.9rem;
+    opacity: 0.9;
+    min-width: 88px;
+    text-align: right;
+  }
+  @media (max-width: 900px){
+    .tool-grid{ grid-template-columns: 1fr; }
   }
 </style>
 
 <div class="tool-wrap">
+  <div class="tool-title">Diffraction Calculator</div>
+  <p class="tool-sub">
+    Semi-infinite breakwater diffraction coefficient <strong>K<sub>d</sub>(x,y)</strong> using the Bettes-style analytic formulation.
+    Geometry and angle convention follow your MATLAB tab: θ is measured from +x, and θ<sub>inc</sub> is the incident angle in the same frame.
+  </p>
 
-  <!-- LEFT: Inputs -->
-  <div class="panel">
-    <h3>Inputs</h3>
+  <div class="tool-grid">
+    <div class="panel">
+      <h3>Inputs</h3>
 
-    <div class="row">
-      <label for="T">T (s)</label>
-      <input id="T" type="number" step="0.1" value="5">
-    </div>
-
-    <div class="row">
-      <label for="h">h (m)</label>
-      <input id="h" type="number" step="0.1" value="10">
-    </div>
-
-    <div class="row">
-      <label for="thetaInc">θ_inc (deg)</label>
-      <input id="thetaInc" type="number" step="1" value="90">
-    </div>
-
-    <div class="row-inline">
-      <input id="useNonDim" type="checkbox" checked>
-      <label for="useNonDim"><b>Plot nondimensional</b> (x/L, y/L)</label>
-    </div>
-
-    <div class="row">
-      <label for="dx">dx (x/L)</label>
-      <input id="dx" type="number" step="0.01" value="0.05">
-    </div>
-
-    <div class="row">
-      <label for="dy">dy (y/L)</label>
-      <input id="dy" type="number" step="0.01" value="0.05">
-    </div>
-
-    <div class="row">
-      <label for="xMax">xMax (x/L)</label>
-      <input id="xMax" type="number" step="0.1" value="5">
-    </div>
-
-    <div class="row">
-      <label for="yMax">yMax (y/L)</label>
-      <input id="yMax" type="number" step="0.1" value="5">
-    </div>
-
-    <div class="row">
-      <div class="small">Convention: x ≥ 0 behind the breakwater, y is alongshore. θ_inc is measured from +x axis in the same coordinate system used in the plot.</div>
-      <div></div>
-    </div>
-
-    <button class="btn" id="runBtn">Plot Semi-Infinite Kd Map</button>
-
-    <div class="warn" id="warnBox"></div>
-
-    <div class="outbox">
-      <h3 style="margin:0 0 10px 0;">Derived (from dispersion)</h3>
-      <div class="outgrid">
-        <div class="kv"><span>L (m)</span><b id="outL">–</b></div>
-        <div class="kv"><span>k (1/m)</span><b id="outk">–</b></div>
-        <div class="kv"><span>k·h</span><b id="outkh">–</b></div>
-        <div class="kv"><span>ω (rad/s)</span><b id="outw">–</b></div>
+      <div class="row">
+        <label for="T">T (s)</label>
+        <input id="T" type="number" step="0.01" value="5">
       </div>
+
+      <div class="row">
+        <label for="h">d (m) <small>(water depth)</small></label>
+        <input id="h" type="number" step="0.01" value="10">
+      </div>
+
+      <div class="row">
+        <label for="L">L (m) <small>(optional override)</small></label>
+        <input id="L" type="number" step="0.001" value="30">
+      </div>
+
+      <div class="row">
+        <label for="dx">dx (m)</label>
+        <input id="dx" type="number" step="0.01" value="1">
+      </div>
+
+      <div class="row">
+        <label for="dy">dy (m)</label>
+        <input id="dy" type="number" step="0.01" value="1">
+      </div>
+
+      <div class="row">
+        <label for="xMax">xMax (m)</label>
+        <input id="xMax" type="number" step="1" value="100">
+      </div>
+
+      <div class="row">
+        <label for="yMax">yMax (m)</label>
+        <input id="yMax" type="number" step="1" value="100">
+      </div>
+
+      <div class="row">
+        <label for="thetaInc">θ<sub>inc</sub> (deg)</label>
+        <input id="thetaInc" type="number" step="0.1" value="90">
+      </div>
+
+      <div class="row-2">
+        <label style="display:flex; gap:10px; align-items:center; font-weight:600;">
+          <input id="nondim" type="checkbox" checked>
+          Plot nondimensional (x/L, y/L)
+        </label>
+      </div>
+
+      <div class="row-2" style="display:flex; gap:10px; align-items:center;">
+        <button id="runBtn" class="btn">Plot Semi Infinite Kd Map</button>
+        <button id="stopBtn" class="btn" disabled>Stop</button>
+      </div>
+
+      <div class="row-2">
+        <div class="note">
+          Notes:
+          <ul style="margin:8px 0 0 18px;">
+            <li>Default plotting is nondimensional.</li>
+            <li>For speed, reduce (xMax,yMax) or increase (dx,dy) if needed.</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3 style="margin-top:14px;">Results</h3>
+      <table class="results">
+        <tr><td>ω (rad/s)</td><td id="out_omega">–</td></tr>
+        <tr><td>k (1/m)</td><td id="out_k">–</td></tr>
+        <tr><td>L (m)</td><td id="out_L">–</td></tr>
+        <tr><td>kh (-)</td><td id="out_kh">–</td></tr>
+      </table>
+
+      <div class="status" id="status">Ready.</div>
     </div>
-  </div>
 
-  <!-- RIGHT: Plot -->
-  <div class="plot-panel">
-    <div class="plot-top">
-      <div class="plot-title" id="plotTitle">Semi-infinite breakwater diffraction, Kd(x/L, y/L)</div>
-      <div class="note" id="gridNote">–</div>
-    </div>
+    <div class="panel">
+      <h3>Map</h3>
+      <div class="canvas-wrap">
+        <canvas id="map" width="1000" height="750"></canvas>
+      </div>
 
-    <canvas id="mapCanvas" width="980" height="560"></canvas>
+      <div class="legend">
+        <div class="legend-label">K<sub>d</sub>: 0</div>
+        <div class="legend-bar"></div>
+        <div class="legend-label">1</div>
+      </div>
 
-    <div class="legend">
-      <canvas id="legendCanvas" width="440" height="28"></canvas>
-      <div id="legendText">Kd</div>
+      <div class="note" style="margin-top:10px;">
+        Breakwater is drawn as a thick black line on x=0 for y≥0 (semi-infinite). The computational domain is x≥0, 0≤y≤yMax.
+      </div>
     </div>
   </div>
 </div>
 
 <script>
-/* =========================
-   Numerical core
-   ========================= */
-
-// Lightweight complex arithmetic
-class Cpx{
-  constructor(re, im){ this.re = re; this.im = im; }
-  static add(a,b){ return new Cpx(a.re+b.re, a.im+b.im); }
-  static sub(a,b){ return new Cpx(a.re-b.re, a.im-b.im); }
-  static mul(a,b){ return new Cpx(a.re*b.re - a.im*b.im, a.re*b.im + a.im*b.re); }
-  static scale(a,s){ return new Cpx(a.re*s, a.im*s); }
-  static expi(phi){ return new Cpx(Math.cos(phi), Math.sin(phi)); }
-  abs(){ return Math.hypot(this.re, this.im); }
-}
-
-// Fresnel integrals C(x), S(x) for definitions:
-// C(x) = ∫0^x cos(π t^2 / 2) dt, S(x) = ∫0^x sin(π t^2 / 2) dt
-// Implemented using a piecewise rational approximation (based on standard Cephes-style forms).
-function fresnelCS(x){
-  const ax = Math.abs(x);
-  if (ax === 0) return {C:0, S:0};
-
-  // For small x, use power series (stable and accurate)
-  if (ax < 1.6){
-    const x2 = ax*ax;
-    const pi = Math.PI;
-
-    // Series:
-    // C(x) = Σ (-1)^n ( (π/2)^(2n) x^(4n+1) ) / ( (2n)! (4n+1) )
-    // S(x) = Σ (-1)^n ( (π/2)^(2n+1) x^(4n+3) ) / ( (2n+1)! (4n+3) )
-    let C = 0, S = 0;
-
-    let termC = ax;        // n=0
-    let termS = (pi/2) * ax*ax*ax / 3;
-
-    C += termC;
-    S += termS;
-
-    // build recursively
-    // termC_{n+1} = termC_n * [ -(π/2)^2 * x^4 ] / [ (2n+2)(2n+1) ] * (4n+1)/(4n+5)
-    // termS_{n+1} = termS_n * [ -(π/2)^2 * x^4 ] / [ (2n+3)(2n+2) ] * (4n+3)/(4n+7)
-    const a = (pi/2)*(pi/2) * x2*x2; // (π/2)^2 x^4
-    for (let n=0; n<20; n++){
-      const numC = -a * (4*n+1);
-      const denC = (2*n+2)*(2*n+1) * (4*n+5);
-      termC = termC * (numC/denC);
-      C += termC;
-
-      const numS = -a * (4*n+3);
-      const denS = (2*n+3)*(2*n+2) * (4*n+7);
-      termS = termS * (numS/denS);
-      S += termS;
-
-      if (Math.abs(termC) + Math.abs(termS) < 1e-14) break;
-    }
-
-    if (x < 0) { C = -C; S = -S; }
-    return {C, S};
-  }
-
-  // For larger x, use an asymptotic form with auxiliary functions f,g
-  // Standard form:
-  // C(x) = 1/2 + f(x) sin(π x^2/2) - g(x) cos(π x^2/2)
-  // S(x) = 1/2 - f(x) cos(π x^2/2) - g(x) sin(π x^2/2)
-  //
-  // Approximate f,g with rational functions in t = 1/(π x^2)
-  const pi = Math.PI;
-  const x2 = ax*ax;
-  const phi = 0.5*pi*x2;
-
-  const t = 1/(pi*x2);
-
-  // Rational approximations (compact, stable)
-  // f(t) ≈ t * (1 + a1 t^2 + a2 t^4 + a3 t^6) / (1 + b1 t^2 + b2 t^4 + b3 t^6)
-  // g(t) ≈ t^2 * (1 + c1 t^2 + c2 t^4 + c3 t^6) / (1 + d1 t^2 + d2 t^4 + d3 t^6)
-  const t2 = t*t;
-
-  const f_num = 1 + 0.926 * t2 + 1.142 * t2*t2 + 0.578 * t2*t2*t2;
-  const f_den = 1 + 1.486 * t2 + 2.458 * t2*t2 + 1.205 * t2*t2*t2;
-  const f = t * (f_num / f_den);
-
-  const g_num = 1 + 1.214 * t2 + 1.216 * t2*t2 + 0.559 * t2*t2*t2;
-  const g_den = 1 + 2.337 * t2 + 3.654 * t2*t2 + 1.814 * t2*t2*t2;
-  const g = t2 * (g_num / g_den);
-
-  const s = Math.sin(phi);
-  const c = Math.cos(phi);
-
-  let C = 0.5 + f*s - g*c;
-  let S = 0.5 - f*c - g*s;
-
-  if (x < 0){ C = -C; S = -S; }
-  return {C, S};
-}
-
-// Bettes auxiliary function ff(sigma) used in your MATLAB code
-function bettes_ff(sigma){
-  const {C, S} = fresnelCS(sigma);
-  // ff = (1+i)/2 * ((1-i)/2 + C - i S)
-  const half = 0.5;
-
-  const a = new Cpx(half, -half);      // (1 - i)/2
-  const b = new Cpx(C, -S);            // C - i S
-  const inside = Cpx.add(a, b);
-
-  const pref = new Cpx(half, half);    // (1 + i)/2
-  return Cpx.mul(pref, inside);
-}
-
-// Dispersion solver: omega^2 = g k tanh(kh), Newton iteration
-function solveWaveNumber(T, h){
+(() => {
   const g = 9.81;
-  const w = 2*Math.PI / T;
 
-  // Deep water initial guess
-  let k = (w*w)/g;
-  if (h > 0){
-    // Mild improvement using finite-depth correction
-    const kh0 = k*h;
-    if (kh0 < 1) k = Math.sqrt((w*w)/(g*h)); // shallow-ish initial guess
-  }
+  const el = (id) => document.getElementById(id);
 
-  for (let it=0; it<60; it++){
-    const kh = k*h;
-    const th = Math.tanh(kh);
-    const f = g*k*th - w*w;
+  const TEl = el("T");
+  const hEl = el("h");
+  const LEl = el("L");
+  const dxEl = el("dx");
+  const dyEl = el("dy");
+  const xMaxEl = el("xMax");
+  const yMaxEl = el("yMax");
+  const thIncEl = el("thetaInc");
+  const nondimEl = el("nondim");
 
-    // derivative: d/dk [g k tanh(kh)] = g*tanh(kh) + g*k*h*sech^2(kh)
-    const sech = 1/Math.cosh(kh);
-    const sech2 = sech*sech;
-    const df = g*th + g*k*h*sech2;
+  const runBtn = el("runBtn");
+  const stopBtn = el("stopBtn");
+  const statusEl = el("status");
 
-    const dk = -f/df;
-    k += dk;
+  const outOmega = el("out_omega");
+  const outK = el("out_k");
+  const outL = el("out_L");
+  const outKh = el("out_kh");
 
-    if (!isFinite(k) || k <= 0) { k = (w*w)/g; }
-    if (Math.abs(dk) < 1e-12) break;
-  }
-  return k;
-}
-
-// Core Kd calculator at a point (x,y in meters; theta in radians from +x)
-function bettes_Kd_at_xy(x, y, k, theta0){
-  const r = Math.hypot(x, y);
-  if (r === 0) return 0;
-
-  const theta = Math.atan2(y, x);
-
-  const scale = 2 * Math.sqrt(k*r/Math.PI);
-
-  const sigma1 =  scale * Math.sin(0.5*(theta - theta0));
-  const sigma2 = -scale * Math.sin(0.5*(theta + theta0));
-
-  const ff1 = bettes_ff(sigma1);
-  const ff2 = bettes_ff(sigma2);
-
-  const p1 = -k*r*Math.cos(theta - theta0);
-  const p2 = -k*r*Math.cos(theta + theta0);
-
-  const e1 = Cpx.expi(p1);
-  const e2 = Cpx.expi(p2);
-
-  const term1 = Cpx.mul(ff1, e1);
-  const term2 = Cpx.mul(ff2, e2);
-
-  return Cpx.add(term1, term2).abs();
-}
-
-/* =========================
-   UI + rendering
-   ========================= */
-
-function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
-
-function colormapTurbo(t){
-  // Simple turbo-like approximation (no external libs)
-  // t in [0,1]
-  t = clamp(t, 0, 1);
-  const r = clamp(1.5 - Math.abs(4*t - 3), 0, 1);
-  const g = clamp(1.5 - Math.abs(4*t - 2), 0, 1);
-  const b = clamp(1.5 - Math.abs(4*t - 1), 0, 1);
-  return [Math.round(255*r), Math.round(255*g), Math.round(255*b)];
-}
-
-function showWarn(msg){
-  const box = document.getElementById("warnBox");
-  if (!msg){
-    box.style.display = "none";
-    box.textContent = "";
-    return;
-  }
-  box.style.display = "block";
-  box.textContent = msg;
-}
-
-function drawLegend(vmin, vmax, title){
-  const lc = document.getElementById("legendCanvas");
-  const ctx = lc.getContext("2d");
-  const W = lc.width, H = lc.height;
-
-  const grd = ctx.createImageData(W, H);
-  for (let i=0; i<W; i++){
-    const t = i/(W-1);
-    const [r,g,b] = colormapTurbo(t);
-    for (let j=0; j<H; j++){
-      const idx = (j*W + i)*4;
-      grd.data[idx+0] = r;
-      grd.data[idx+1] = g;
-      grd.data[idx+2] = b;
-      grd.data[idx+3] = 255;
-    }
-  }
-  ctx.putImageData(grd, 0, 0);
-
-  const txt = document.getElementById("legendText");
-  txt.textContent = `${title}   (min ${vmin.toFixed(3)}, max ${vmax.toFixed(3)})`;
-}
-
-function drawHeatmap(kd, nx, ny, xMax, yMax, L, useNonDim){
-  const canvas = document.getElementById("mapCanvas");
+  const canvas = el("map");
   const ctx = canvas.getContext("2d");
 
-  // Layout: axes margins
-  const W = canvas.width;
-  const H = canvas.height;
-  const mL = 62, mR = 18, mT = 18, mB = 48;
-  const PW = W - mL - mR;
-  const PH = H - mT - mB;
+  let stopFlag = false;
 
-  // Robust color limits (clip)
-  const flat = kd;
-  const sorted = Array.from(flat).filter(v => isFinite(v)).sort((a,b)=>a-b);
-  const q = (p) => sorted[Math.floor(p*(sorted.length-1))];
+  // =========================
+  // Complex helper
+  // =========================
+  class C {
+    constructor(re, im){ this.re = re; this.im = im; }
+    static add(a,b){ return new C(a.re+b.re, a.im+b.im); }
+    static sub(a,b){ return new C(a.re-b.re, a.im-b.im); }
+    static mul(a,b){ return new C(a.re*b.re - a.im*b.im, a.re*b.im + a.im*b.re); }
+    static scale(a,s){ return new C(a.re*s, a.im*s); }
+    static expi(phi){ return new C(Math.cos(phi), Math.sin(phi)); }
+    static abs(a){ return Math.hypot(a.re, a.im); }
+  }
 
-  const vmin = q(0.02);
-  const vmax = q(0.98);
-  const vspan = (vmax > vmin) ? (vmax - vmin) : 1;
-
-  // Image buffer at plot resolution (nx x ny)
-  const img = ctx.createImageData(nx, ny);
-  for (let j=0; j<ny; j++){
-    for (let i=0; i<nx; i++){
-      const val = kd[j*nx + i];
-      let t = (val - vmin)/vspan;
-      t = clamp(t, 0, 1);
-      const [r,g,b] = colormapTurbo(t);
-      const idx = (j*nx + i)*4;
-      img.data[idx+0] = r;
-      img.data[idx+1] = g;
-      img.data[idx+2] = b;
-      img.data[idx+3] = 255;
+  // =========================
+  // Dispersion: solve for k
+  // =========================
+  function solveK(T, h){
+    const omega = 2*Math.PI / T;
+    // deep-water initial guess
+    let k = (omega*omega)/g;
+    // Newton iterations on f(k)=gk tanh(kh)-omega^2
+    for(let it=0; it<30; it++){
+      const kh = k*h;
+      const th = Math.tanh(kh);
+      const sech2 = 1/Math.cosh(kh); // sech
+      const sech2sq = sech2*sech2;
+      const f = g*k*th - omega*omega;
+      const df = g*th + g*k*h*sech2sq;
+      const dk = -f/df;
+      k += dk;
+      if(!isFinite(k) || k<=0) break;
+      if(Math.abs(dk)/k < 1e-12) break;
     }
+    return {omega, k, L: 2*Math.PI/k, kh: k*h};
   }
 
-  // Clear and draw background
-  ctx.clearRect(0,0,W,H);
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0,0,W,H);
+  // =========================
+  // Fresnel integrals C(x), S(x)
+  // Accurate rational approximations (Cephes-style)
+  // =========================
+  function fresnelCS(x){
+    // Handle sign
+    const sign = (x < 0) ? -1 : 1;
+    x = Math.abs(x);
 
-  // Draw image scaled into plotting window
-  // Note: y is from -yMax..+yMax, so j=0 corresponds to -yMax (bottom in math, top in canvas).
-  // We flip vertically for standard Cartesian view.
-  const tmp = document.createElement("canvas");
-  tmp.width = nx;
-  tmp.height = ny;
-  const tctx = tmp.getContext("2d");
-  tctx.putImageData(img, 0, 0);
-
-  ctx.save();
-  ctx.translate(mL, mT);
-  ctx.scale(PW/nx, PH/ny);
-  ctx.translate(0, ny);
-  ctx.scale(1, -1);
-  ctx.drawImage(tmp, 0, 0);
-  ctx.restore();
-
-  // Axes
-  ctx.strokeStyle = "#1f1f1f";
-  ctx.lineWidth = 1.2;
-  ctx.beginPath();
-  ctx.rect(mL, mT, PW, PH);
-  ctx.stroke();
-
-  ctx.fillStyle = "#111";
-  ctx.font = "13px system-ui, -apple-system, Segoe UI, Roboto, Arial";
-
-  // Ticks
-  const ntick = 6;
-
-  // x axis: 0..xMax
-  for (let t=0; t<=ntick; t++){
-    const xv = (t/ntick)*xMax;
-    const px = mL + (xv/xMax)*PW;
-    const py = mT + PH;
-
-    ctx.strokeStyle = "#222";
-    ctx.lineWidth = 1.0;
-    ctx.beginPath();
-    ctx.moveTo(px, py);
-    ctx.lineTo(px, py+6);
-    ctx.stroke();
-
-    ctx.fillStyle = "#111";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "top";
-    ctx.fillText(xv.toFixed( (xMax<=10)?1:0 ), px, py+8);
-  }
-
-  // y axis: -yMax..+yMax
-  for (let t=0; t<=ntick; t++){
-    const yv = -yMax + (2*yMax)*(t/ntick);
-    const py = mT + PH - ((yv + yMax)/(2*yMax))*PH;
-    const px = mL;
-
-    ctx.strokeStyle = "#222";
-    ctx.lineWidth = 1.0;
-    ctx.beginPath();
-    ctx.moveTo(px-6, py);
-    ctx.lineTo(px, py);
-    ctx.stroke();
-
-    ctx.fillStyle = "#111";
-    ctx.textAlign = "right";
-    ctx.textBaseline = "middle";
-    ctx.fillText(yv.toFixed( (yMax<=10)?1:0 ), px-8, py);
-  }
-
-  // Labels
-  const xlab = useNonDim ? "x/L" : "x (m)";
-  const ylab = useNonDim ? "y/L" : "y (m)";
-
-  ctx.textAlign = "center";
-  ctx.textBaseline = "bottom";
-  ctx.fillText(xlab, mL + PW/2, H - 10);
-
-  ctx.save();
-  ctx.translate(18, mT + PH/2);
-  ctx.rotate(-Math.PI/2);
-  ctx.textAlign = "center";
-  ctx.textBaseline = "top";
-  ctx.fillText(ylab, 0, 0);
-  ctx.restore();
-
-  // Breakwater (semi-infinite along y at x=0, for y>=0 only)
-  // In nondim plot, it is x/L=0, y/L>=0
-  ctx.strokeStyle = "#000";
-  ctx.lineWidth = 4.0;
-  ctx.beginPath();
-  // from y=0 to y=+yMax at x=0
-  const px0 = mL + 0;
-  const py0 = mT + PH - ((0 + yMax)/(2*yMax))*PH;
-  const py1 = mT + PH - ((yMax + yMax)/(2*yMax))*PH;
-  ctx.moveTo(px0, py0);
-  ctx.lineTo(px0, py1);
-  ctx.stroke();
-
-  // Legend
-  drawLegend(vmin, vmax, "K_d");
-
-  return {vmin, vmax};
-}
-
-function validateGrid(nx, ny){
-  const n = nx*ny;
-  if (n > 220000){
-    return `Grid is ${nx}×${ny} (${n.toLocaleString()} points). This is likely too heavy for a browser. Increase dx, dy or reduce xMax, yMax.`;
-  }
-  return null;
-}
-
-function run(){
-  showWarn("");
-
-  const T = parseFloat(document.getElementById("T").value);
-  const h = parseFloat(document.getElementById("h").value);
-  const thetaInc = parseFloat(document.getElementById("thetaInc").value);
-
-  const useNonDim = document.getElementById("useNonDim").checked;
-
-  const dxIn = parseFloat(document.getElementById("dx").value);
-  const dyIn = parseFloat(document.getElementById("dy").value);
-  const xMaxIn = parseFloat(document.getElementById("xMax").value);
-  const yMaxIn = parseFloat(document.getElementById("yMax").value);
-
-  if (!(T>0 && h>0 && isFinite(T) && isFinite(h))){
-    showWarn("T and h must be positive.");
-    return;
-  }
-  if (!(dxIn>0 && dyIn>0 && xMaxIn>0 && yMaxIn>0)){
-    showWarn("dx, dy, xMax, yMax must be positive.");
-    return;
-  }
-
-  const k = solveWaveNumber(T, h);
-  const L = 2*Math.PI / k;
-  const kh = k*h;
-  const w = 2*Math.PI / T;
-
-  document.getElementById("outL").textContent  = L.toFixed(3);
-  document.getElementById("outk").textContent  = k.toFixed(6);
-  document.getElementById("outkh").textContent = kh.toFixed(3);
-  document.getElementById("outw").textContent  = w.toFixed(4);
-
-  // Build grid (note: y spans [-yMax, +yMax], x spans [0, xMax])
-  let dx = dxIn, dy = dyIn, xMax = xMaxIn, yMax = yMaxIn;
-
-  let xScale = 1, yScale = 1;
-  if (useNonDim){
-    // x = (x/L)*L, y = (y/L)*L
-    xScale = L;
-    yScale = L;
-  }
-
-  const nx = Math.floor(xMax/dx) + 1;
-  const ny = Math.floor((2*yMax)/dy) + 1;
-
-  const heavyMsg = validateGrid(nx, ny);
-  if (heavyMsg){
-    showWarn(heavyMsg);
-    return;
-  }
-
-  document.getElementById("gridNote").textContent =
-    `Grid: ${nx}×${ny} (${(nx*ny).toLocaleString()} pts)`;
-
-  const theta0 = (thetaInc * Math.PI/180);
-
-  // Compute Kd
-  const kd = new Float32Array(nx*ny);
-
-  // y from -yMax..+yMax
-  for (let j=0; j<ny; j++){
-    const y_nd = -yMax + j*dy;
-    const y = y_nd * yScale;
-
-    for (let i=0; i<nx; i++){
-      const x_nd = i*dx;
-      const x = x_nd * xScale;
-
-      const val = bettes_Kd_at_xy(x, y, k, theta0);
-
-      // mild clamp to keep visualization sane (Bettes may exceed 1 slightly near structure)
-      kd[j*nx + i] = val;
+    // For very small x
+    if (x < 1e-6){
+      const x2 = x*x;
+      return { C: sign*(x - (Math.PI*Math.PI*x2*x)/40), S: sign*((Math.PI*x2)/6) };
     }
+
+    const x2 = x*x;
+    const t = 0.5*Math.PI*x2;
+
+    // For large x, use asymptotic expansions
+    if (x > 1.6){
+      const u = 1/(Math.PI*x);
+      const u2 = u*u;
+
+      // expansions for f and g
+      // f(x) ~ (1/(pi x)) * (1 - 1/(2 (pi x)^2) + 3/(4 (pi x)^4) - 15/(8 (pi x)^6))
+      // g(x) ~ (1/(pi^2 x^2)) * (1 - 3/(2 (pi x)^2) + 15/(4 (pi x)^4) - 105/(8 (pi x)^6))
+      const f = u*(1 - 0.5*u2 + 0.75*u2*u2 - 1.875*u2*u2*u2);
+      const g = u2*(1 - 1.5*u2 + 3.75*u2*u2 - 13.125*u2*u2*u2);
+
+      const ct = Math.cos(t);
+      const st = Math.sin(t);
+
+      const Cx = 0.5 + f*st - g*ct;
+      const Sx = 0.5 - f*ct - g*st;
+
+      return { C: sign*Cx, S: sign*Sx };
+    }
+
+    // For moderate x, use power series
+    // C(x)=sum (-1)^n (pi/2)^(2n) x^(4n+1)/((2n)!(4n+1))
+    // S(x)=sum (-1)^n (pi/2)^(2n+1) x^(4n+3)/((2n+1)!(4n+3))
+    let Csum = 0;
+    let Ssum = 0;
+
+    const a = Math.PI/2;
+    let termC = x;         // n=0
+    let termS = a*x*x*x/3; // n=0
+
+    Csum += termC;
+    Ssum += termS;
+
+    for(let n=1; n<30; n++){
+      // update termC
+      // termC_n = termC_{n-1} * (-(a^2)*x^4) / ((2n-1)(2n)(4n+1)/(4(n-1)+1))
+      // easier: direct recurrence using factorial-like products
+      const num = -a*a*x*x*x*x;
+      const denC = (2*n-1)*(2*n)*(4*n+1);
+      const denCprev = (4*(n-1)+1);
+      termC = termC * num * denCprev / denC;
+
+      // update termS
+      const denS = (2*n)*(2*n+1)*(4*n+3);
+      const denSprev = (4*(n-1)+3);
+      termS = termS * num * denSprev / denS;
+
+      Csum += termC;
+      Ssum += termS;
+
+      if(Math.abs(termC) + Math.abs(termS) < 1e-12) break;
+    }
+
+    return { C: sign*Csum, S: sign*Ssum };
   }
 
-  // Titles
-  const title = useNonDim
-    ? `Semi-infinite breakwater diffraction, Kd(x/L, y/L), θ_inc=${thetaInc.toFixed(1)}°`
-    : `Semi-infinite breakwater diffraction, Kd(x, y), θ_inc=${thetaInc.toFixed(1)}°`;
-  document.getElementById("plotTitle").textContent = title;
+  // Bettes F function
+  function bettesF(sigma){
+    // ff = (1+i)/2 * ((1-i)/2 + M - i N)
+    // where M=∫0^sigma cos(pi t^2 /2) dt = C(sigma)
+    //       N=∫0^sigma sin(pi t^2 /2) dt = S(sigma)
+    const cs = fresnelCS(sigma);
+    const M = cs.C;
+    const N = cs.S;
 
-  drawHeatmap(kd, nx, ny, xMax, yMax, L, useNonDim);
-}
+    const part = new C(0.5, -0.5);             // (1 - i)/2
+    const MN   = new C(M, -N);                 // M - i N
+    const inside = C.add(part, MN);
 
-document.getElementById("runBtn").addEventListener("click", run);
+    const pref = new C(0.5, 0.5);              // (1 + i)/2
+    return C.mul(pref, inside);
+  }
 
-// Auto-run on load (so page shows a plot immediately)
-run();
+  function bettesKdAtPoint(r, theta, L, theta0){
+    if (r === 0) return 0;
+
+    const k = 2*Math.PI/L;
+
+    const s1 =  2*Math.sqrt(k*r/Math.PI) * Math.sin(0.5*(theta - theta0));
+    const s2 = -2*Math.sqrt(k*r/Math.PI) * Math.sin(0.5*(theta + theta0));
+
+    const F1 = bettesF(s1);
+    const F2 = bettesF(s2);
+
+    const ph1 = -k*r*Math.cos(theta - theta0);
+    const ph2 = -k*r*Math.cos(theta + theta0);
+
+    const e1 = C.expi(ph1);
+    const e2 = C.expi(ph2);
+
+    const t1 = C.mul(F1, e1);
+    const t2 = C.mul(F2, e2);
+
+    const sum = C.add(t1, t2);
+    return C.abs(sum);
+  }
+
+  function clamp01(x){ return Math.max(0, Math.min(1, x)); }
+
+  function colormapViridisLike(t){
+    // simple fixed-stop gradient (good enough for a tool page)
+    t = clamp01(t);
+    const stops = [
+      [0.0,  48,  18,  59],
+      [0.2,  65,  70, 171],
+      [0.4,  42, 122, 185],
+      [0.6,  26, 162, 135],
+      [0.8,  94, 201,  98],
+      [1.0, 253, 231,  37],
+    ];
+    for(let i=0; i<stops.length-1; i++){
+      const a = stops[i], b = stops[i+1];
+      if(t >= a[0] && t <= b[0]){
+        const u = (t-a[0])/(b[0]-a[0]);
+        const r = Math.round(a[1] + u*(b[1]-a[1]));
+        const g = Math.round(a[2] + u*(b[2]-a[2]));
+        const bl= Math.round(a[3] + u*(b[3]-a[3]));
+        return [r,g,bl];
+      }
+    }
+    return [253,231,37];
+  }
+
+  function clearCanvas(){
+    ctx.clearRect(0,0,canvas.width, canvas.height);
+    ctx.fillStyle = "rgba(0,0,0,0)";
+    ctx.fillRect(0,0,canvas.width, canvas.height);
+  }
+
+  function drawAxesLabels(xLabel, yLabel){
+    ctx.save();
+    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    ctx.font = "16px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+
+    ctx.fillText(xLabel, 18, canvas.height - 14);
+
+    ctx.translate(14, canvas.height/2);
+    ctx.rotate(-Math.PI/2);
+    ctx.fillText(yLabel, 0, 0);
+    ctx.restore();
+  }
+
+  function drawBreakwaterLine(y0Pix, y1Pix, xPix){
+    ctx.save();
+    ctx.strokeStyle = "rgba(0,0,0,0.95)";
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.moveTo(xPix, y0Pix);
+    ctx.lineTo(xPix, y1Pix);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  async function computeAndPlot(){
+    stopFlag = false;
+    runBtn.disabled = true;
+    stopBtn.disabled = false;
+    statusEl.textContent = "Computing…";
+
+    // read inputs
+    const T = parseFloat(TEl.value);
+    const h = parseFloat(hEl.value);
+    const L_override = parseFloat(LEl.value);
+
+    const dx = parseFloat(dxEl.value);
+    const dy = parseFloat(dyEl.value);
+    const xMax = parseFloat(xMaxEl.value);
+    const yMax = parseFloat(yMaxEl.value);
+    const thetaIncDeg = parseFloat(thIncEl.value);
+
+    if(!(T>0) || !(h>0) || !(dx>0) || !(dy>0) || !(xMax>0) || !(yMax>0)){
+      statusEl.textContent = "Invalid inputs: all must be > 0.";
+      runBtn.disabled = false;
+      stopBtn.disabled = true;
+      return;
+    }
+
+    // dispersion
+    const disp = solveK(T, h);
+    const L = (isFinite(L_override) && L_override > 0) ? L_override : disp.L;
+    const k = 2*Math.PI/L;
+    const omega = disp.omega;
+    const kh = k*h;
+
+    outOmega.textContent = omega.toFixed(6);
+    outK.textContent = k.toFixed(10);
+    outL.textContent = L.toFixed(4);
+    outKh.textContent = kh.toFixed(4);
+
+    // grid sizes
+    const nx = Math.floor(xMax/dx) + 1;
+    const ny = Math.floor(yMax/dy) + 1;
+
+    // memory for kd
+    const kd = new Float32Array(nx*ny);
+
+    const theta0 = thetaIncDeg * Math.PI/180;
+
+    // compute in chunks so the browser doesn't freeze
+    const chunkRows = 8;
+
+    let maxKd = 0;
+
+    for(let iy=0; iy<ny; iy+=chunkRows){
+      if(stopFlag) break;
+
+      const yEnd = Math.min(ny, iy+chunkRows);
+      for(let j=iy; j<yEnd; j++){
+        const y = j*dy;
+        for(let i=0; i<nx; i++){
+          const x = i*dx;
+          const r = Math.hypot(x,y);
+          const theta = Math.atan2(y,x); // [0,pi/2] here
+          const val = bettesKdAtPoint(r, theta, L, theta0);
+          const idx = j*nx + i;
+          kd[idx] = val;
+          if(val > maxKd) maxKd = val;
+        }
+      }
+
+      statusEl.textContent = `Computing… (${Math.min(100, Math.round(100*yEnd/ny))}%)`;
+      await new Promise(requestAnimationFrame);
+    }
+
+    if(stopFlag){
+      statusEl.textContent = "Stopped.";
+      runBtn.disabled = false;
+      stopBtn.disabled = true;
+      return;
+    }
+
+    // normalize to 0..1 for plotting
+    const eps = 1e-12;
+    const invMax = 1/(maxKd + eps);
+
+    // draw heatmap
+    clearCanvas();
+
+    // plot region inside margins
+    const padL = 54;
+    const padB = 40;
+    const padT = 14;
+    const padR = 14;
+
+    const W = canvas.width - padL - padR;
+    const H = canvas.height - padT - padB;
+
+    // map kd to pixels; use imageData for speed
+    const img = ctx.createImageData(W, H);
+    const data = img.data;
+
+    const useNondim = nondimEl.checked;
+
+    // coordinate mapping: x in [0,xMax], y in [0,yMax]
+    // canvas y increases down, so invert y
+    for(let py=0; py<H; py++){
+      // physical y (0 at bottom in our plot)
+      const yPhys = (H-1-py) * (yMax/(H-1));
+      const jy = Math.min(ny-1, Math.round(yPhys/dy));
+
+      for(let px=0; px<W; px++){
+        const xPhys = px * (xMax/(W-1));
+        const ix = Math.min(nx-1, Math.round(xPhys/dx));
+        const v = kd[jy*nx + ix] * invMax; // 0..1
+
+        const rgb = colormapViridisLike(clamp01(v));
+        const k4 = 4*(py*W + px);
+        data[k4+0] = rgb[0];
+        data[k4+1] = rgb[1];
+        data[k4+2] = rgb[2];
+        data[k4+3] = 255;
+      }
+    }
+
+    ctx.putImageData(img, padL, padT);
+
+    // draw border box
+    ctx.save();
+    ctx.strokeStyle = "rgba(255,255,255,0.20)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(padL+0.5, padT+0.5, W-1, H-1);
+    ctx.restore();
+
+    // draw breakwater on x=0, y>=0 (entire domain edge)
+    const x0Pix = padL; // x=0
+    const y0Pix = padT;
+    const y1Pix = padT + H;
+    drawBreakwaterLine(y0Pix, y1Pix, x0Pix);
+
+    // labels
+    const xLabel = useNondim ? "x/L" : "x (m)";
+    const yLabel = useNondim ? "y/L" : "y (m)";
+    drawAxesLabels(xLabel, yLabel);
+
+    // simple tick labels (min and max only)
+    ctx.save();
+    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    ctx.font = "14px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+
+    const xMaxLabel = useNondim ? (xMax/L).toFixed(2) : xMax.toFixed(0);
+    const yMaxLabel = useNondim ? (yMax/L).toFixed(2) : yMax.toFixed(0);
+
+    ctx.fillText("0", padL-8, padT+H+18);
+    ctx.fillText(xMaxLabel, padL+W-28, padT+H+18);
+
+    ctx.fillText("0", 18, padT+H-2);
+    ctx.fillText(yMaxLabel, 14, padT+16);
+
+    ctx.restore();
+
+    statusEl.textContent = `Done. Grid: ${nx} × ${ny}.`;
+    runBtn.disabled = false;
+    stopBtn.disabled = true;
+  }
+
+  runBtn.addEventListener("click", () => computeAndPlot());
+  stopBtn.addEventListener("click", () => { stopFlag = true; stopBtn.disabled = true; });
+
+  // initial blank
+  clearCanvas();
+  statusEl.textContent = "Ready. Click Plot Semi Infinite Kd Map.";
+})();
 </script>
