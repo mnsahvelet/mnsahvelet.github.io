@@ -15,7 +15,7 @@ Education
   * Research focus: nearshore wave transformation, longshore sediment transport, coastal modeling.
 
 * **Ph.D., Civil Engineering**, Atatürk University, Erzurum, Türkiye, 2022–Present  
-  * *(If this is not active anymore, change “2022–Present” to “2022–2023” and add “(incomplete)” to avoid confusion.)*
+  * *(If this is not active anymore, change “2022–Present” to “2022–2023”  “(incomplete)”)*
 
 * **Ph.D., Civil Engineering**, Istanbul Technical University, Istanbul, Türkiye, 2022  
   * Left program due to Atatürk University Research Assistantship opportunity.
