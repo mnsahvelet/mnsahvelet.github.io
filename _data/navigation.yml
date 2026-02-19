@@ -27,5 +27,10 @@ main:
     url: /cv/
 
   - title: "Tools"
-    url: /tools/dispersion/
+    url: /tools/
+  children:
+    - title: "Dispersion"
+      url: /tools/dispersion/
+    - title: "Diffraction (Bettes)"
+      url: /tools/diffraction/bettes/
 
