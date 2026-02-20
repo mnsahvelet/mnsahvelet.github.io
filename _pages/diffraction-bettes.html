@@ -44,50 +44,18 @@ author_profile: false
     <div class="panel">
       <h3>Inputs</h3>
 
-      <div class="row">
-        <label for="T">T (s)</label>
-        <input id="T" type="number" step="0.01" value="5">
-      </div>
-
-      <div class="row">
-        <label for="h">d (m) <small>(water depth)</small></label>
-        <input id="h" type="number" step="0.01" value="10">
-      </div>
-
-      <div class="row">
-        <label for="L">L (m) <small>(optional override)</small></label>
-        <input id="L" type="number" step="0.001" value="">
-      </div>
-
-      <div class="row">
-        <label for="dx">dx (m)</label>
-        <input id="dx" type="number" step="0.01" value="1">
-      </div>
-
-      <div class="row">
-        <label for="dy">dy (m)</label>
-        <input id="dy" type="number" step="0.01" value="1">
-      </div>
-
-      <div class="row">
-        <label for="xMax">xMax (m)</label>
-        <input id="xMax" type="number" step="1" value="100">
-      </div>
-
-      <div class="row">
-        <label for="yMax">yMax (m)</label>
-        <input id="yMax" type="number" step="1" value="100">
-      </div>
-
-      <div class="row">
-        <label for="thetaInc">θ<sub>inc</sub> (deg)</label>
-        <input id="thetaInc" type="number" step="0.1" value="90">
-      </div>
+      <div class="row"><label for="T">T (s)</label><input id="T" type="number" step="0.01" value="5"></div>
+      <div class="row"><label for="h">d (m) <small>(water depth)</small></label><input id="h" type="number" step="0.01" value="10"></div>
+      <div class="row"><label for="L">L (m) <small>(optional override)</small></label><input id="L" type="number" step="0.001" value=""></div>
+      <div class="row"><label for="dx">dx (m)</label><input id="dx" type="number" step="0.01" value="1"></div>
+      <div class="row"><label for="dy">dy (m)</label><input id="dy" type="number" step="0.01" value="1"></div>
+      <div class="row"><label for="xMax">xMax (m)</label><input id="xMax" type="number" step="1" value="100"></div>
+      <div class="row"><label for="yMax">yMax (m)</label><input id="yMax" type="number" step="1" value="100"></div>
+      <div class="row"><label for="thetaInc">θ<sub>inc</sub> (deg)</label><input id="thetaInc" type="number" step="0.1" value="90"></div>
 
       <div class="row-2">
         <label style="display:flex; gap:10px; align-items:center; font-weight:600;">
-          <input id="nondim" type="checkbox" checked>
-          Plot nondimensional (x/L, y/L)
+          <input id="nondim" type="checkbox" checked> Plot nondimensional (x/L, y/L)
         </label>
       </div>
 
@@ -126,8 +94,11 @@ author_profile: false
   </div>
 </div>
 
+{% raw %}
 <script>
 document.addEventListener("DOMContentLoaded", () => {
+  "use strict";
+
   const g = 9.81;
   const el = (id) => document.getElementById(id);
 
@@ -153,11 +124,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const canvas = el("map");
   const ctx = canvas.getContext("2d");
 
-  // If this prints, JS is running for sure
-  statusEl.textContent = "JS loaded. Click Plot.";
+  if (!plotBtn || !stopBtn || !statusEl || !canvas || !ctx) {
+    console.error("Missing required elements.", { plotBtn, stopBtn, statusEl, canvas, ctx });
+    return;
+  }
 
   let stopFlag = false;
 
+  // prove JS loaded
+  statusEl.textContent = "JS loaded. Click Plot.";
+
+  // ========= Complex =========
   class C {
     constructor(re, im){ this.re = re; this.im = im; }
     static add(a,b){ return new C(a.re+b.re, a.im+b.im); }
@@ -166,27 +143,25 @@ document.addEventListener("DOMContentLoaded", () => {
     static abs(a){ return Math.hypot(a.re, a.im); }
   }
 
+  // ========= Dispersion =========
   function solveK(T, h){
     const omega = 2*Math.PI / T;
     let k = (omega*omega)/g;
-    for(let it=0; it<30; it++){
+    for(let it=0; it<40; it++){
       const kh = k*h;
       const th = Math.tanh(kh);
-      const sech = 1/Math.cosh(kh);
-      const sech2 = sech*sech;
-
+      const sech2 = 1/(Math.cosh(kh)**2);
       const f  = g*k*th - omega*omega;
       const df = g*th + g*k*h*sech2;
-
       const dk = -f/df;
       k += dk;
-
       if(!isFinite(k) || k<=0) break;
       if(Math.abs(dk)/k < 1e-12) break;
     }
     return {omega, k, L: 2*Math.PI/k, kh: k*h};
   }
 
+  // ========= Fresnel C,S =========
   function fresnelCS(x){
     const sign = (x < 0) ? -1 : 1;
     x = Math.abs(x);
@@ -199,33 +174,29 @@ document.addEventListener("DOMContentLoaded", () => {
     const x2 = x*x;
     const t = 0.5*Math.PI*x2;
 
+    // asymptotic
     if (x > 1.6){
       const u  = 1/(Math.PI*x);
       const u2 = u*u;
-
-      const f = u*(1 - 0.5*u2 + 0.75*u2*u2 - 1.875*u2*u2*u2);
+      const f  = u*(1 - 0.5*u2 + 0.75*u2*u2 - 1.875*u2*u2*u2);
       const gg = u2*(1 - 1.5*u2 + 3.75*u2*u2 - 13.125*u2*u2*u2);
-
-      const ct = Math.cos(t);
-      const st = Math.sin(t);
-
+      const ct = Math.cos(t), st = Math.sin(t);
       const Cx = 0.5 + f*st - gg*ct;
       const Sx = 0.5 - f*ct - gg*st;
-
       return { C: sign*Cx, S: sign*Sx };
     }
 
-    let Csum = 0;
-    let Ssum = 0;
-
+    // power series
+    let Csum = 0, Ssum = 0;
     const a = Math.PI/2;
+
     let termC = x;
     let termS = a*x*x*x/3;
 
     Csum += termC;
     Ssum += termS;
 
-    for(let n=1; n<30; n++){
+    for(let n=1; n<40; n++){
       const num = -a*a*x*x*x*x;
 
       const denC = (2*n-1)*(2*n)*(4*n+1);
@@ -246,10 +217,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function bettesF(sigma){
-    const cs = fresnelCS(sigma);
-    const M = cs.C;
-    const N = cs.S;
-
+    const {C: M, S: N} = fresnelCS(sigma);
+    // F = (1+i)/2 * ( (1-i)/2 + M - iN )
     const inside = new C(0.5 + M, -(0.5 + N));
     const pref   = new C(0.5, 0.5);
     return C.mul(pref, inside);
@@ -257,7 +226,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function bettesKdAtPoint(r, theta, L, theta0){
     if (r === 0) return 0;
-
     const k = 2*Math.PI/L;
     const fac = 2*Math.sqrt(k*r/Math.PI);
 
@@ -302,9 +270,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return [253,231,37];
   }
 
-  function clearCanvas(){
-    ctx.clearRect(0,0,canvas.width, canvas.height);
-  }
+  function clearCanvas(){ ctx.clearRect(0,0,canvas.width, canvas.height); }
 
   function drawBreakwaterLine(y0Pix, y1Pix, xPix){
     ctx.save();
@@ -322,7 +288,6 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.fillStyle = "rgba(255,255,255,0.85)";
     ctx.font = "16px system-ui, -apple-system, Segoe UI, Roboto, Arial";
     ctx.fillText(xLabel, 18, canvas.height - 14);
-
     ctx.translate(14, canvas.height/2);
     ctx.rotate(-Math.PI/2);
     ctx.fillText(yLabel, 0, 0);
@@ -384,7 +349,6 @@ document.addEventListener("DOMContentLoaded", () => {
           const x = i*dx;
           const r = Math.hypot(x,y);
           const theta = Math.atan2(y,x);
-
           const val = bettesKdAtPoint(r, theta, L, theta0);
           const idx = j*nx + i;
           kd[idx] = val;
@@ -454,7 +418,7 @@ document.addEventListener("DOMContentLoaded", () => {
   plotBtn.addEventListener("click", (e) => { e.preventDefault(); computeAndPlot(); });
   stopBtn.addEventListener("click", () => { stopFlag = true; stopBtn.disabled = true; });
 
-  // initial blank so you see the canvas exists
+  // initial paint (proves canvas exists)
   clearCanvas();
   ctx.fillStyle = "rgba(255,255,255,0.08)";
   ctx.fillRect(60, 60, 320, 130);
@@ -463,3 +427,4 @@ document.addEventListener("DOMContentLoaded", () => {
   ctx.fillText("Ready. Click Plot.", 80, 130);
 });
 </script>
+{% endraw %}
