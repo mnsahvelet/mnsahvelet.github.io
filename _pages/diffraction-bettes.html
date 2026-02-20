@@ -157,7 +157,7 @@ author_profile: false
 
       <div class="row">
         <label for="L">L (m) <small>(optional override)</small></label>
-        <input id="L" type="number" step="0.001" value="30">
+        <input id="L" type="number" step="0.001" value="">
       </div>
 
       <div class="row">
@@ -193,8 +193,8 @@ author_profile: false
       </div>
 
       <div class="row-2" style="display:flex; gap:10px; align-items:center;">
-        <button id="plotBtn" type="button">Plot Semi Infinite Kd Map</button>
-        <button id="stopBtn" class="btn" disabled>Stop</button>
+        <button id="plotBtn" class="btn" type="button">Plot Semi Infinite Kd Map</button>
+        <button id="stopBtn" class="btn" type="button" disabled>Stop</button>
       </div>
 
       <div class="row-2">
@@ -202,7 +202,7 @@ author_profile: false
           Notes:
           <ul style="margin:8px 0 0 18px;">
             <li>Default plotting is nondimensional.</li>
-            <li>For speed, reduce (xMax,yMax) or increase (dx,dy) if needed.</li>
+            <li>For speed, reduce (xMax,yMax) or increase (dx,dy).</li>
           </ul>
         </div>
       </div>
@@ -231,7 +231,7 @@ author_profile: false
       </div>
 
       <div class="note" style="margin-top:10px;">
-        Breakwater is drawn as a thick black line on x=0 for y≥0 (semi-infinite). The computational domain is x≥0, 0≤y≤yMax.
+        Breakwater is drawn as a thick black line on x=0 for y≥0 (semi-infinite). Domain is x≥0, 0≤y≤yMax.
       </div>
     </div>
   </div>
@@ -240,28 +240,31 @@ author_profile: false
 <script>
 (() => {
   const g = 9.81;
-
   const el = (id) => document.getElementById(id);
 
-  const TEl = el("T");
-  const hEl = el("h");
-  const LEl = el("L");
-  const dxEl = el("dx");
-  const dyEl = el("dy");
-  const xMaxEl = el("xMax");
-  const yMaxEl = el("yMax");
-  const thIncEl = el("thetaInc");
+  // Inputs
+  const TEl      = el("T");
+  const hEl      = el("h");
+  const LEl      = el("L");
+  const dxEl     = el("dx");
+  const dyEl     = el("dy");
+  const xMaxEl   = el("xMax");
+  const yMaxEl   = el("yMax");
+  const thIncEl  = el("thetaInc");
   const nondimEl = el("nondim");
 
-  const runBtn = el("runBtn");
-  const stopBtn = el("stopBtn");
+  // Buttons (FIXED)
+  const plotBtn  = el("plotBtn");
+  const stopBtn  = el("stopBtn");
+
+  // Outputs
   const statusEl = el("status");
-
   const outOmega = el("out_omega");
-  const outK = el("out_k");
-  const outL = el("out_L");
-  const outKh = el("out_kh");
+  const outK     = el("out_k");
+  const outL     = el("out_L");
+  const outKh    = el("out_kh");
 
+  // Canvas
   const canvas = el("map");
   const ctx = canvas.getContext("2d");
 
@@ -273,9 +276,7 @@ author_profile: false
   class C {
     constructor(re, im){ this.re = re; this.im = im; }
     static add(a,b){ return new C(a.re+b.re, a.im+b.im); }
-    static sub(a,b){ return new C(a.re-b.re, a.im-b.im); }
     static mul(a,b){ return new C(a.re*b.re - a.im*b.im, a.re*b.im + a.im*b.re); }
-    static scale(a,s){ return new C(a.re*s, a.im*s); }
     static expi(phi){ return new C(Math.cos(phi), Math.sin(phi)); }
     static abs(a){ return Math.hypot(a.re, a.im); }
   }
@@ -285,18 +286,19 @@ author_profile: false
   // =========================
   function solveK(T, h){
     const omega = 2*Math.PI / T;
-    // deep-water initial guess
-    let k = (omega*omega)/g;
-    // Newton iterations on f(k)=gk tanh(kh)-omega^2
+    let k = (omega*omega)/g; // deep-water guess
     for(let it=0; it<30; it++){
       const kh = k*h;
       const th = Math.tanh(kh);
-      const sech2 = 1/Math.cosh(kh); // sech
-      const sech2sq = sech2*sech2;
-      const f = g*k*th - omega*omega;
-      const df = g*th + g*k*h*sech2sq;
+      const sech = 1/Math.cosh(kh);
+      const sech2 = sech*sech;
+
+      const f  = g*k*th - omega*omega;
+      const df = g*th + g*k*h*sech2;
+
       const dk = -f/df;
       k += dk;
+
       if(!isFinite(k) || k<=0) break;
       if(Math.abs(dk)/k < 1e-12) break;
     }
@@ -304,15 +306,12 @@ author_profile: false
   }
 
   // =========================
-  // Fresnel integrals C(x), S(x)
-  // Accurate rational approximations (Cephes-style)
+  // Fresnel integrals
   // =========================
   function fresnelCS(x){
-    // Handle sign
     const sign = (x < 0) ? -1 : 1;
     x = Math.abs(x);
 
-    // For very small x
     if (x < 1e-6){
       const x2 = x*x;
       return { C: sign*(x - (Math.PI*Math.PI*x2*x)/40), S: sign*((Math.PI*x2)/6) };
@@ -321,14 +320,10 @@ author_profile: false
     const x2 = x*x;
     const t = 0.5*Math.PI*x2;
 
-    // For large x, use asymptotic expansions
     if (x > 1.6){
-      const u = 1/(Math.PI*x);
+      const u  = 1/(Math.PI*x);
       const u2 = u*u;
 
-      // expansions for f and g
-      // f(x) ~ (1/(pi x)) * (1 - 1/(2 (pi x)^2) + 3/(4 (pi x)^4) - 15/(8 (pi x)^6))
-      // g(x) ~ (1/(pi^2 x^2)) * (1 - 3/(2 (pi x)^2) + 15/(4 (pi x)^4) - 105/(8 (pi x)^6))
       const f = u*(1 - 0.5*u2 + 0.75*u2*u2 - 1.875*u2*u2*u2);
       const g = u2*(1 - 1.5*u2 + 3.75*u2*u2 - 13.125*u2*u2*u2);
 
@@ -341,29 +336,24 @@ author_profile: false
       return { C: sign*Cx, S: sign*Sx };
     }
 
-    // For moderate x, use power series
-    // C(x)=sum (-1)^n (pi/2)^(2n) x^(4n+1)/((2n)!(4n+1))
-    // S(x)=sum (-1)^n (pi/2)^(2n+1) x^(4n+3)/((2n+1)!(4n+3))
+    // power series (moderate x)
     let Csum = 0;
     let Ssum = 0;
 
     const a = Math.PI/2;
-    let termC = x;         // n=0
-    let termS = a*x*x*x/3; // n=0
+    let termC = x;
+    let termS = a*x*x*x/3;
 
     Csum += termC;
     Ssum += termS;
 
     for(let n=1; n<30; n++){
-      // update termC
-      // termC_n = termC_{n-1} * (-(a^2)*x^4) / ((2n-1)(2n)(4n+1)/(4(n-1)+1))
-      // easier: direct recurrence using factorial-like products
       const num = -a*a*x*x*x*x;
+
       const denC = (2*n-1)*(2*n)*(4*n+1);
       const denCprev = (4*(n-1)+1);
       termC = termC * num * denCprev / denC;
 
-      // update termS
       const denS = (2*n)*(2*n+1)*(4*n+3);
       const denSprev = (4*(n-1)+3);
       termS = termS * num * denSprev / denS;
@@ -377,20 +367,14 @@ author_profile: false
     return { C: sign*Csum, S: sign*Ssum };
   }
 
-  // Bettes F function
+  // Bettes F(sigma)
   function bettesF(sigma){
-    // ff = (1+i)/2 * ((1-i)/2 + M - i N)
-    // where M=∫0^sigma cos(pi t^2 /2) dt = C(sigma)
-    //       N=∫0^sigma sin(pi t^2 /2) dt = S(sigma)
     const cs = fresnelCS(sigma);
     const M = cs.C;
     const N = cs.S;
 
-    const part = new C(0.5, -0.5);             // (1 - i)/2
-    const MN   = new C(M, -N);                 // M - i N
-    const inside = C.add(part, MN);
-
-    const pref = new C(0.5, 0.5);              // (1 + i)/2
+    const inside = new C(0.5 + M, -(0.5 + N));  // (1-i)/2 + (M - iN)
+    const pref   = new C(0.5, 0.5);             // (1+i)/2
     return C.mul(pref, inside);
   }
 
@@ -399,8 +383,9 @@ author_profile: false
 
     const k = 2*Math.PI/L;
 
-    const s1 =  2*Math.sqrt(k*r/Math.PI) * Math.sin(0.5*(theta - theta0));
-    const s2 = -2*Math.sqrt(k*r/Math.PI) * Math.sin(0.5*(theta + theta0));
+    const fac = 2*Math.sqrt(k*r/Math.PI);
+    const s1 =  fac * Math.sin(0.5*(theta - theta0));
+    const s2 = -fac * Math.sin(0.5*(theta + theta0));
 
     const F1 = bettesF(s1);
     const F2 = bettesF(s2);
@@ -408,20 +393,15 @@ author_profile: false
     const ph1 = -k*r*Math.cos(theta - theta0);
     const ph2 = -k*r*Math.cos(theta + theta0);
 
-    const e1 = C.expi(ph1);
-    const e2 = C.expi(ph2);
+    const t1 = C.mul(F1, C.expi(ph1));
+    const t2 = C.mul(F2, C.expi(ph2));
 
-    const t1 = C.mul(F1, e1);
-    const t2 = C.mul(F2, e2);
-
-    const sum = C.add(t1, t2);
-    return C.abs(sum);
+    return C.abs(C.add(t1, t2));
   }
 
   function clamp01(x){ return Math.max(0, Math.min(1, x)); }
 
   function colormapViridisLike(t){
-    // simple fixed-stop gradient (good enough for a tool page)
     t = clamp01(t);
     const stops = [
       [0.0,  48,  18,  59],
@@ -435,10 +415,11 @@ author_profile: false
       const a = stops[i], b = stops[i+1];
       if(t >= a[0] && t <= b[0]){
         const u = (t-a[0])/(b[0]-a[0]);
-        const r = Math.round(a[1] + u*(b[1]-a[1]));
-        const g = Math.round(a[2] + u*(b[2]-a[2]));
-        const bl= Math.round(a[3] + u*(b[3]-a[3]));
-        return [r,g,bl];
+        return [
+          Math.round(a[1] + u*(b[1]-a[1])),
+          Math.round(a[2] + u*(b[2]-a[2])),
+          Math.round(a[3] + u*(b[3]-a[3])),
+        ];
       }
     }
     return [253,231,37];
@@ -446,15 +427,12 @@ author_profile: false
 
   function clearCanvas(){
     ctx.clearRect(0,0,canvas.width, canvas.height);
-    ctx.fillStyle = "rgba(0,0,0,0)";
-    ctx.fillRect(0,0,canvas.width, canvas.height);
   }
 
   function drawAxesLabels(xLabel, yLabel){
     ctx.save();
     ctx.fillStyle = "rgba(255,255,255,0.85)";
     ctx.font = "16px system-ui, -apple-system, Segoe UI, Roboto, Arial";
-
     ctx.fillText(xLabel, 18, canvas.height - 14);
 
     ctx.translate(14, canvas.height/2);
@@ -476,11 +454,10 @@ author_profile: false
 
   async function computeAndPlot(){
     stopFlag = false;
-    runBtn.disabled = true;
+    plotBtn.disabled = true;
     stopBtn.disabled = false;
     statusEl.textContent = "Computing…";
 
-    // read inputs
     const T = parseFloat(TEl.value);
     const h = parseFloat(hEl.value);
     const L_override = parseFloat(LEl.value);
@@ -493,35 +470,30 @@ author_profile: false
 
     if(!(T>0) || !(h>0) || !(dx>0) || !(dy>0) || !(xMax>0) || !(yMax>0)){
       statusEl.textContent = "Invalid inputs: all must be > 0.";
-      runBtn.disabled = false;
+      plotBtn.disabled = false;
       stopBtn.disabled = true;
       return;
     }
 
-    // dispersion
     const disp = solveK(T, h);
     const L = (isFinite(L_override) && L_override > 0) ? L_override : disp.L;
+
     const k = 2*Math.PI/L;
     const omega = disp.omega;
     const kh = k*h;
 
     outOmega.textContent = omega.toFixed(6);
-    outK.textContent = k.toFixed(10);
-    outL.textContent = L.toFixed(4);
-    outKh.textContent = kh.toFixed(4);
+    outK.textContent     = k.toFixed(10);
+    outL.textContent     = L.toFixed(4);
+    outKh.textContent    = kh.toFixed(4);
 
-    // grid sizes
     const nx = Math.floor(xMax/dx) + 1;
     const ny = Math.floor(yMax/dy) + 1;
 
-    // memory for kd
     const kd = new Float32Array(nx*ny);
-
     const theta0 = thetaIncDeg * Math.PI/180;
 
-    // compute in chunks so the browser doesn't freeze
     const chunkRows = 8;
-
     let maxKd = 0;
 
     for(let iy=0; iy<ny; iy+=chunkRows){
@@ -533,7 +505,8 @@ author_profile: false
         for(let i=0; i<nx; i++){
           const x = i*dx;
           const r = Math.hypot(x,y);
-          const theta = Math.atan2(y,x); // [0,pi/2] here
+          const theta = Math.atan2(y,x);
+
           const val = bettesKdAtPoint(r, theta, L, theta0);
           const idx = j*nx + i;
           kd[idx] = val;
@@ -547,46 +520,33 @@ author_profile: false
 
     if(stopFlag){
       statusEl.textContent = "Stopped.";
-      runBtn.disabled = false;
+      plotBtn.disabled = false;
       stopBtn.disabled = true;
       return;
     }
 
-    // normalize to 0..1 for plotting
-    const eps = 1e-12;
-    const invMax = 1/(maxKd + eps);
+    const invMax = 1/(maxKd + 1e-12);
 
-    // draw heatmap
     clearCanvas();
 
-    // plot region inside margins
-    const padL = 54;
-    const padB = 40;
-    const padT = 14;
-    const padR = 14;
-
-    const W = canvas.width - padL - padR;
+    const padL = 54, padB = 40, padT = 14, padR = 14;
+    const W = canvas.width  - padL - padR;
     const H = canvas.height - padT - padB;
 
-    // map kd to pixels; use imageData for speed
     const img = ctx.createImageData(W, H);
     const data = img.data;
 
-    const useNondim = nondimEl.checked;
-
-    // coordinate mapping: x in [0,xMax], y in [0,yMax]
-    // canvas y increases down, so invert y
     for(let py=0; py<H; py++){
-      // physical y (0 at bottom in our plot)
       const yPhys = (H-1-py) * (yMax/(H-1));
       const jy = Math.min(ny-1, Math.round(yPhys/dy));
 
       for(let px=0; px<W; px++){
         const xPhys = px * (xMax/(W-1));
         const ix = Math.min(nx-1, Math.round(xPhys/dx));
-        const v = kd[jy*nx + ix] * invMax; // 0..1
 
-        const rgb = colormapViridisLike(clamp01(v));
+        const v = kd[jy*nx + ix] * invMax;
+        const rgb = colormapViridisLike(v);
+
         const k4 = 4*(py*W + px);
         data[k4+0] = rgb[0];
         data[k4+1] = rgb[1];
@@ -597,25 +557,23 @@ author_profile: false
 
     ctx.putImageData(img, padL, padT);
 
-    // draw border box
+    // border
     ctx.save();
     ctx.strokeStyle = "rgba(255,255,255,0.20)";
     ctx.lineWidth = 1;
     ctx.strokeRect(padL+0.5, padT+0.5, W-1, H-1);
     ctx.restore();
 
-    // draw breakwater on x=0, y>=0 (entire domain edge)
-    const x0Pix = padL; // x=0
-    const y0Pix = padT;
-    const y1Pix = padT + H;
-    drawBreakwaterLine(y0Pix, y1Pix, x0Pix);
+    // breakwater at x=0
+    drawBreakwaterLine(padT, padT + H, padL);
 
     // labels
+    const useNondim = nondimEl.checked;
     const xLabel = useNondim ? "x/L" : "x (m)";
     const yLabel = useNondim ? "y/L" : "y (m)";
     drawAxesLabels(xLabel, yLabel);
 
-    // simple tick labels (min and max only)
+    // corner ticks
     ctx.save();
     ctx.fillStyle = "rgba(255,255,255,0.85)";
     ctx.font = "14px system-ui, -apple-system, Segoe UI, Roboto, Arial";
@@ -624,7 +582,7 @@ author_profile: false
     const yMaxLabel = useNondim ? (yMax/L).toFixed(2) : yMax.toFixed(0);
 
     ctx.fillText("0", padL-8, padT+H+18);
-    ctx.fillText(xMaxLabel, padL+W-28, padT+H+18);
+    ctx.fillText(xMaxLabel, padL+W-34, padT+H+18);
 
     ctx.fillText("0", 18, padT+H-2);
     ctx.fillText(yMaxLabel, 14, padT+16);
@@ -632,39 +590,22 @@ author_profile: false
     ctx.restore();
 
     statusEl.textContent = `Done. Grid: ${nx} × ${ny}.`;
-    runBtn.disabled = false;
+    plotBtn.disabled = false;
     stopBtn.disabled = true;
   }
 
-  runBtn.addEventListener("click", () => computeAndPlot());
-  stopBtn.addEventListener("click", () => { stopFlag = true; stopBtn.disabled = true; });
+  // Wire buttons (FIXED)
+  plotBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    computeAndPlot();
+  });
 
-  // initial blank
+  stopBtn.addEventListener("click", () => {
+    stopFlag = true;
+    stopBtn.disabled = true;
+  });
+
   clearCanvas();
   statusEl.textContent = "Ready. Click Plot Semi Infinite Kd Map.";
 })();
-
-
-  <script>
-document.addEventListener("DOMContentLoaded", () => {
-  const plotBtn = document.getElementById("plotBtn");
-  if (!plotBtn) {
-    console.error("plotBtn not found. Check the button id.");
-    return;
-  }
-
-  plotBtn.addEventListener("click", (e) => {
-    e.preventDefault();            // extra safety
-    try {
-      plotSemiInfiniteKd();        // your main function name
-    } catch (err) {
-      console.error(err);
-      const msg = document.getElementById("statusMsg");
-      if (msg) msg.textContent = "Error: " + (err.message || err);
-      alert("Error. Open DevTools Console for details.");
-    }
-  });
-});
-</script>
-
 </script>
