@@ -193,7 +193,7 @@ author_profile: false
       </div>
 
       <div class="row-2" style="display:flex; gap:10px; align-items:center;">
-        <button id="runBtn" class="btn">Plot Semi Infinite Kd Map</button>
+        <button id="plotBtn" type="button">Plot Semi Infinite Kd Map</button>
         <button id="stopBtn" class="btn" disabled>Stop</button>
       </div>
 
@@ -643,4 +643,28 @@ author_profile: false
   clearCanvas();
   statusEl.textContent = "Ready. Click Plot Semi Infinite Kd Map.";
 })();
+
+
+  <script>
+document.addEventListener("DOMContentLoaded", () => {
+  const plotBtn = document.getElementById("plotBtn");
+  if (!plotBtn) {
+    console.error("plotBtn not found. Check the button id.");
+    return;
+  }
+
+  plotBtn.addEventListener("click", (e) => {
+    e.preventDefault();            // extra safety
+    try {
+      plotSemiInfiniteKd();        // your main function name
+    } catch (err) {
+      console.error(err);
+      const msg = document.getElementById("statusMsg");
+      if (msg) msg.textContent = "Error: " + (err.message || err);
+      alert("Error. Open DevTools Console for details.");
+    }
+  });
+});
+</script>
+
 </script>
