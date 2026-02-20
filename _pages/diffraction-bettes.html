@@ -6,139 +6,38 @@ author_profile: false
 ---
 
 <style>
-  .tool-wrap{
-    max-width: 980px;
-    margin: 0 auto;
-  }
-  .tool-title{
-    font-size: 2rem;
-    font-weight: 700;
-    margin: 0 0 0.4rem 0;
-  }
-  .tool-sub{
-    margin: 0 0 1.2rem 0;
-    opacity: 0.9;
-  }
-  .tool-grid{
-    display: grid;
-    grid-template-columns: 340px 1fr;
-    gap: 18px;
-    align-items: start;
-  }
-  .panel{
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 10px;
-    padding: 14px;
-  }
-  .panel h3{
-    margin: 0 0 10px 0;
-    font-size: 1.05rem;
-  }
-  .row{
-    display: grid;
-    grid-template-columns: 1fr 120px;
-    gap: 10px;
-    align-items: center;
-    margin-bottom: 10px;
-  }
-  .row label{
-    font-weight: 600;
-  }
-  .row input{
-    width: 100%;
-    padding: 8px 10px;
-    border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.18);
-    background: rgba(0,0,0,0.20);
-    color: inherit;
-  }
-  .row small{
-    opacity: 0.85;
-    font-weight: 400;
-  }
-  .row-2{
-    display: grid;
-    grid-template-columns: 1fr;
-    margin-top: 8px;
-    margin-bottom: 8px;
-  }
-  .btn{
-    display: inline-block;
-    padding: 10px 12px;
-    border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.20);
-    background: rgba(255,255,255,0.10);
-    color: inherit;
-    cursor: pointer;
-    font-weight: 700;
-  }
-  .btn:disabled{
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-  .note{
-    font-size: 0.92rem;
-    opacity: 0.9;
-    line-height: 1.35;
-  }
-  .results{
-    font-size: 0.95rem;
-    border-collapse: collapse;
-    width: 100%;
-  }
-  .results td{
-    padding: 6px 8px;
-    border-bottom: 1px solid rgba(255,255,255,0.10);
-    vertical-align: top;
-  }
-  .results td:first-child{
-    width: 140px;
-    opacity: 0.9;
-  }
-  .canvas-wrap{
-    position: relative;
-    width: 100%;
-    overflow: hidden;
-    border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.12);
-    background: rgba(0,0,0,0.22);
-  }
+  .tool-wrap{ max-width: 980px; margin: 0 auto; }
+  .tool-title{ font-size: 2rem; font-weight: 700; margin: 0 0 0.4rem 0; }
+  .tool-sub{ margin: 0 0 1.2rem 0; opacity: 0.9; }
+  .tool-grid{ display: grid; grid-template-columns: 340px 1fr; gap: 18px; align-items: start; }
+  .panel{ background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 14px; }
+  .panel h3{ margin: 0 0 10px 0; font-size: 1.05rem; }
+  .row{ display: grid; grid-template-columns: 1fr 120px; gap: 10px; align-items: center; margin-bottom: 10px; }
+  .row label{ font-weight: 600; }
+  .row input{ width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.18); background: rgba(0,0,0,0.20); color: inherit; }
+  .row small{ opacity: 0.85; font-weight: 400; }
+  .row-2{ display: grid; grid-template-columns: 1fr; margin-top: 8px; margin-bottom: 8px; }
+  .btn{ display: inline-block; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.20); background: rgba(255,255,255,0.10); color: inherit; cursor: pointer; font-weight: 700; }
+  .btn:disabled{ opacity: 0.6; cursor: not-allowed; }
+  .note{ font-size: 0.92rem; opacity: 0.9; line-height: 1.35; }
+  .results{ font-size: 0.95rem; border-collapse: collapse; width: 100%; }
+  .results td{ padding: 6px 8px; border-bottom: 1px solid rgba(255,255,255,0.10); vertical-align: top; }
+  .results td:first-child{ width: 140px; opacity: 0.9; }
+  .canvas-wrap{ position: relative; width: 100%; overflow: hidden; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: rgba(0,0,0,0.22); }
   canvas{ display:block; width:100%; height:auto; }
-  .status{
-    margin-top: 10px;
-    opacity: 0.9;
-    font-size: 0.92rem;
-  }
-  .legend{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    margin-top: 10px;
-  }
-  .legend-bar{
-    height: 10px;
-    flex: 1;
-    border-radius: 999px;
-    border: 1px solid rgba(255,255,255,0.18);
-    background: linear-gradient(90deg, #30123b, #4145ab, #2a7ab9, #1aa287, #5ec962, #b8de29, #fde725);
-  }
-  .legend-label{
-    font-size: 0.9rem;
-    opacity: 0.9;
-    min-width: 88px;
-    text-align: right;
-  }
-  @media (max-width: 900px){
-    .tool-grid{ grid-template-columns: 1fr; }
-  }
+  .status{ margin-top: 10px; opacity: 0.9; font-size: 0.92rem; }
+  .legend{ display:flex; align-items:center; gap:10px; margin-top: 10px; }
+  .legend-bar{ height: 10px; flex: 1; border-radius: 999px; border: 1px solid rgba(255,255,255,0.18);
+               background: linear-gradient(90deg, #30123b, #4145ab, #2a7ab9, #1aa287, #5ec962, #b8de29, #fde725); }
+  .legend-label{ font-size: 0.9rem; opacity: 0.9; min-width: 88px; text-align: right; }
+  @media (max-width: 900px){ .tool-grid{ grid-template-columns: 1fr; } }
 </style>
 
 <div class="tool-wrap">
   <div class="tool-title">Diffraction Calculator</div>
   <p class="tool-sub">
     Semi-infinite breakwater diffraction coefficient <strong>K<sub>d</sub>(x,y)</strong> using the Bettes-style analytic formulation.
-    Geometry and angle convention follow your MATLAB tab: θ is measured from +x, and θ<sub>inc</sub> is the incident angle in the same frame.
+    Angle convention follows your MATLAB tab: θ is measured from +x, and θ<sub>inc</sub> is the incident angle in the same frame.
   </p>
 
   <div class="tool-grid">
@@ -215,7 +114,7 @@ author_profile: false
         <tr><td>kh (-)</td><td id="out_kh">–</td></tr>
       </table>
 
-      <div class="status" id="status">Ready.</div>
+      <div class="status" id="status">Ready. Click Plot.</div>
     </div>
 
     <div class="panel">
@@ -238,7 +137,7 @@ author_profile: false
 </div>
 
 <script>
-(() => {
+document.addEventListener("DOMContentLoaded", () => {
   const g = 9.81;
   const el = (id) => document.getElementById(id);
 
@@ -253,7 +152,7 @@ author_profile: false
   const thIncEl  = el("thetaInc");
   const nondimEl = el("nondim");
 
-  // Buttons (FIXED)
+  // Buttons
   const plotBtn  = el("plotBtn");
   const stopBtn  = el("stopBtn");
 
@@ -268,11 +167,14 @@ author_profile: false
   const canvas = el("map");
   const ctx = canvas.getContext("2d");
 
+  // Safety: if anything is missing, fail loudly
+  if (!plotBtn || !stopBtn || !statusEl || !canvas || !ctx) {
+    console.error("Missing required DOM elements.");
+    return;
+  }
+
   let stopFlag = false;
 
-  // =========================
-  // Complex helper
-  // =========================
   class C {
     constructor(re, im){ this.re = re; this.im = im; }
     static add(a,b){ return new C(a.re+b.re, a.im+b.im); }
@@ -281,12 +183,9 @@ author_profile: false
     static abs(a){ return Math.hypot(a.re, a.im); }
   }
 
-  // =========================
-  // Dispersion: solve for k
-  // =========================
   function solveK(T, h){
     const omega = 2*Math.PI / T;
-    let k = (omega*omega)/g; // deep-water guess
+    let k = (omega*omega)/g;
     for(let it=0; it<30; it++){
       const kh = k*h;
       const th = Math.tanh(kh);
@@ -305,9 +204,6 @@ author_profile: false
     return {omega, k, L: 2*Math.PI/k, kh: k*h};
   }
 
-  // =========================
-  // Fresnel integrals
-  // =========================
   function fresnelCS(x){
     const sign = (x < 0) ? -1 : 1;
     x = Math.abs(x);
@@ -325,18 +221,17 @@ author_profile: false
       const u2 = u*u;
 
       const f = u*(1 - 0.5*u2 + 0.75*u2*u2 - 1.875*u2*u2*u2);
-      const g = u2*(1 - 1.5*u2 + 3.75*u2*u2 - 13.125*u2*u2*u2);
+      const gg = u2*(1 - 1.5*u2 + 3.75*u2*u2 - 13.125*u2*u2*u2);
 
       const ct = Math.cos(t);
       const st = Math.sin(t);
 
-      const Cx = 0.5 + f*st - g*ct;
-      const Sx = 0.5 - f*ct - g*st;
+      const Cx = 0.5 + f*st - gg*ct;
+      const Sx = 0.5 - f*ct - gg*st;
 
       return { C: sign*Cx, S: sign*Sx };
     }
 
-    // power series (moderate x)
     let Csum = 0;
     let Ssum = 0;
 
@@ -367,14 +262,13 @@ author_profile: false
     return { C: sign*Csum, S: sign*Ssum };
   }
 
-  // Bettes F(sigma)
   function bettesF(sigma){
     const cs = fresnelCS(sigma);
     const M = cs.C;
     const N = cs.S;
 
-    const inside = new C(0.5 + M, -(0.5 + N));  // (1-i)/2 + (M - iN)
-    const pref   = new C(0.5, 0.5);             // (1+i)/2
+    const inside = new C(0.5 + M, -(0.5 + N));
+    const pref   = new C(0.5, 0.5);
     return C.mul(pref, inside);
   }
 
@@ -382,8 +276,8 @@ author_profile: false
     if (r === 0) return 0;
 
     const k = 2*Math.PI/L;
-
     const fac = 2*Math.sqrt(k*r/Math.PI);
+
     const s1 =  fac * Math.sin(0.5*(theta - theta0));
     const s2 = -fac * Math.sin(0.5*(theta + theta0));
 
@@ -557,23 +451,17 @@ author_profile: false
 
     ctx.putImageData(img, padL, padT);
 
-    // border
     ctx.save();
     ctx.strokeStyle = "rgba(255,255,255,0.20)";
     ctx.lineWidth = 1;
     ctx.strokeRect(padL+0.5, padT+0.5, W-1, H-1);
     ctx.restore();
 
-    // breakwater at x=0
     drawBreakwaterLine(padT, padT + H, padL);
 
-    // labels
     const useNondim = nondimEl.checked;
-    const xLabel = useNondim ? "x/L" : "x (m)";
-    const yLabel = useNondim ? "y/L" : "y (m)";
-    drawAxesLabels(xLabel, yLabel);
+    drawAxesLabels(useNondim ? "x/L" : "x (m)", useNondim ? "y/L" : "y (m)");
 
-    // corner ticks
     ctx.save();
     ctx.fillStyle = "rgba(255,255,255,0.85)";
     ctx.font = "14px system-ui, -apple-system, Segoe UI, Roboto, Arial";
@@ -586,7 +474,6 @@ author_profile: false
 
     ctx.fillText("0", 18, padT+H-2);
     ctx.fillText(yMaxLabel, 14, padT+16);
-
     ctx.restore();
 
     statusEl.textContent = `Done. Grid: ${nx} × ${ny}.`;
@@ -594,18 +481,10 @@ author_profile: false
     stopBtn.disabled = true;
   }
 
-  // Wire buttons (FIXED)
-  plotBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-    computeAndPlot();
-  });
-
-  stopBtn.addEventListener("click", () => {
-    stopFlag = true;
-    stopBtn.disabled = true;
-  });
+  plotBtn.addEventListener("click", (e) => { e.preventDefault(); computeAndPlot(); });
+  stopBtn.addEventListener("click", () => { stopFlag = true; stopBtn.disabled = true; });
 
   clearCanvas();
-  statusEl.textContent = "Ready. Click Plot Semi Infinite Kd Map.";
-})();
+  statusEl.textContent = "JS loaded. Click Plot.";
+});
 </script>
