@@ -379,7 +379,7 @@
       const nx = Math.floor(xMax/dx) + 1;
       const ny = Math.floor(yMax/dy) + 1;
 
-      const MAX_POINTS = 450000;
+      const MAX_POINTS = 1200000; // allows ~1001x1001
       if (nx*ny > MAX_POINTS) {
         statusEl.textContent =
           `Grid too large (${nx}×${ny} = ${nx*ny}). Increase dx,dy or reduce xMax,yMax.`;
@@ -391,7 +391,7 @@
       const kd = new Float32Array(nx*ny);
       const theta0 = thetaIncDeg * Math.PI/180;
 
-      const chunkRows = 6;
+      const chunkRows = 2;  // smoother UI for big grids
 
       for(let iy=0; iy<ny; iy+=chunkRows){
         if(stopFlag) break;
