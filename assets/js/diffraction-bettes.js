@@ -81,7 +81,6 @@
       const x2 = x*x;
       const t = 0.5*Math.PI*x2;
 
-      // asymptotic for large x
       if (x > 1.6){
         const u  = 1/(Math.PI*x);
         const u2 = u*u;
@@ -93,7 +92,6 @@
         return { C: sign*Cx, S: sign*Sx };
       }
 
-      // power series
       let Csum = 0, Ssum = 0;
       const a = Math.PI/2;
 
@@ -103,7 +101,7 @@
       Csum += termC;
       Ssum += termS;
 
-      for(let n=1; n<60; n++){
+      for(let n=1; n<80; n++){
         const num = -a*a*x*x*x*x;
 
         const denC = (2*n-1)*(2*n)*(4*n+1);
@@ -131,9 +129,11 @@
     }
 
     function bettesKdAtPoint(r, theta, L, theta0){
-      if (r === 0) return 0;
+      // mimic MATLAB r_safe = max(r, tiny)
+      const rSafe = Math.max(r, 1e-6);
+
       const k = 2*Math.PI/L;
-      const fac = 2*Math.sqrt(k*r/Math.PI);
+      const fac = 2*Math.sqrt(k*rSafe/Math.PI);
 
       const s1 =  fac * Math.sin(0.5*(theta - theta0));
       const s2 = -fac * Math.sin(0.5*(theta + theta0));
@@ -141,13 +141,15 @@
       const F1 = bettesF(s1);
       const F2 = bettesF(s2);
 
-      const ph1 = -k*r*Math.cos(theta - theta0);
-      const ph2 = -k*r*Math.cos(theta + theta0);
+      const ph1 = -k*rSafe*Math.cos(theta - theta0);
+      const ph2 = -k*rSafe*Math.cos(theta + theta0);
 
       const t1 = C.mul(F1, C.expi(ph1));
       const t2 = C.mul(F2, C.expi(ph2));
 
-      return C.abs(C.add(t1, t2));
+      // clamp like MATLAB expectation (numerical tiny overshoot can happen)
+      const val = C.abs(C.add(t1, t2));
+      return Math.max(0, Math.min(1, val));
     }
 
     // =========================
@@ -225,7 +227,6 @@
         return { x: lerp(p1.x, p2.x, t), y: lerp(p1.y, p2.y, t) };
       }
 
-      // edges: 0 bottom, 1 right, 2 top, 3 left
       const lut = {
         1:  [[3,0]],
         2:  [[0,1]],
@@ -292,7 +293,6 @@
       for (const level of levels){
         const segs = marchingSquares(kd, nx, ny, dx, dy, level);
 
-        // draw all segments
         ctx.beginPath();
         for (const seg of segs){
           const a = physToPix(seg[0].x, seg[0].y, padL, padT, W, H, xMax, yMax);
@@ -302,18 +302,21 @@
         }
         ctx.stroke();
 
-        // labels on a few segments
-        const step = Math.max(1, Math.floor(segs.length / 6));
+        // label only a few, and avoid the extreme left edge crowding
         const label = level.toFixed(1);
+        const step = Math.max(1, Math.floor(segs.length / 5));
 
         for (let s=0; s<segs.length; s+=step){
           const midPhys = {
             x: 0.5*(segs[s][0].x + segs[s][1].x),
             y: 0.5*(segs[s][0].y + segs[s][1].y)
           };
+
+          // skip labels too close to x=0 (prevents the “stacked” mess)
+          if (midPhys.x < 0.06*xMax) continue;
+
           const mid = physToPix(midPhys.x, midPhys.y, padL, padT, W, H, xMax, yMax);
 
-          // white halo for readability
           ctx.save();
           ctx.lineWidth = 3.5;
           ctx.strokeStyle = "rgba(255,255,255,0.85)";
@@ -339,13 +342,13 @@
       const h = parseFloat(hEl.value);
       const L_override = parseFloat(LEl.value);
 
-      let dx = parseFloat(dxEl.value);
-      let dy = parseFloat(dyEl.value);
-      let xMax = parseFloat(xMaxEl.value);
-      let yMax = parseFloat(yMaxEl.value);
+      const dx = parseFloat(dxEl.value);
+      const dy = parseFloat(dyEl.value);
+      const xMax = parseFloat(xMaxEl.value);
+      const yMax = parseFloat(yMaxEl.value);
 
       const thetaIncDeg = parseFloat(thIncEl.value);
-      const useNondim = !!(nondimEl && nondimEl.checked);
+      const doNonDim = !!(nondimEl && nondimEl.checked);
 
       if(!(T>0) || !(h>0) || !(dx>0) || !(dy>0) || !(xMax>0) || !(yMax>0)){
         statusEl.textContent = "Invalid inputs: all must be > 0.";
@@ -359,14 +362,6 @@
       const disp = solveK(T, h);
       const L = (isFinite(L_override) && L_override > 0) ? L_override : disp.L;
 
-      // nondim means dx,dy,xMax,yMax given in units of L
-      if (useNondim) {
-        dx   *= L;
-        dy   *= L;
-        xMax *= L;
-        yMax *= L;
-      }
-
       const k = 2*Math.PI/L;
       const omega = disp.omega;
       const kh = k*h;
@@ -379,7 +374,8 @@
       const nx = Math.floor(xMax/dx) + 1;
       const ny = Math.floor(yMax/dy) + 1;
 
-      const MAX_POINTS = 1200000; // allows ~1001x1001
+      // allow your 1001x1001 case
+      const MAX_POINTS = 1200000;
       if (nx*ny > MAX_POINTS) {
         statusEl.textContent =
           `Grid too large (${nx}×${ny} = ${nx*ny}). Increase dx,dy or reduce xMax,yMax.`;
@@ -391,7 +387,7 @@
       const kd = new Float32Array(nx*ny);
       const theta0 = thetaIncDeg * Math.PI/180;
 
-      const chunkRows = 2;  // smoother UI for big grids
+      const chunkRows = (nx*ny > 500000) ? 2 : 6;
 
       for(let iy=0; iy<ny; iy+=chunkRows){
         if(stopFlag) break;
@@ -431,8 +427,7 @@
       function kdAtPhys(xPhys, yPhys){
         const ix = Math.min(nx-1, Math.max(0, Math.round(xPhys/dx)));
         const iy = Math.min(ny-1, Math.max(0, Math.round(yPhys/dy)));
-        const v  = kd[iy*nx + ix];
-        return Math.max(0, Math.min(1, v));
+        return kd[iy*nx + ix];
       }
 
       for(let py=0; py<H; py++){
@@ -462,10 +457,10 @@
       // breakwater at x=0
       drawBreakwaterLine(padT, padT + H, padL);
 
-      // axes labels
-      drawAxesLabels(useNondim ? "x/L" : "x (m)", useNondim ? "y/L" : "y (m)");
+      // axes labels: MATLAB behavior (only label changes)
+      drawAxesLabels(doNonDim ? "x/L" : "x (m)", doNonDim ? "y/L" : "y (m)");
 
-      // ===== Contours + labels =====
+      // ===== Contours + labels (MATLAB-ish levels) =====
       const levels = [0.2,0.3,0.4,0.5,0.6,0.7,0.8];
       drawContoursAndLabels({
         ctx, padL, padT, W, H,
@@ -482,7 +477,6 @@
     plotBtn.addEventListener("click", (e) => { e.preventDefault(); computeAndPlot(); });
     stopBtn.addEventListener("click", () => { stopFlag = true; stopBtn.disabled = true; });
 
-    // initial paint
     clearCanvas();
     ctx.fillStyle = "rgba(255,255,255,0.08)";
     ctx.fillRect(60, 60, 320, 130);
@@ -491,7 +485,6 @@
     ctx.fillText("Ready. Click Plot.", 80, 130);
   }
 
-  // robust init (works with or without defer)
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);
   } else {
