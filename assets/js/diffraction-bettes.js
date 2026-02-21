@@ -35,7 +35,9 @@
     let stopFlag = false;
     statusEl.textContent = "JS loaded. Click Plot.";
 
-    // ===== Complex (minimal) =====
+    // =========================
+    // Complex
+    // =========================
     class C {
       constructor(re, im){ this.re = re; this.im = im; }
       static add(a,b){ return new C(a.re+b.re, a.im+b.im); }
@@ -44,10 +46,12 @@
       static abs(a){ return Math.hypot(a.re, a.im); }
     }
 
-    // ===== Dispersion =====
+    // =========================
+    // Dispersion
+    // =========================
     function solveK(T, h){
       const omega = 2*Math.PI / T;
-      let k = (omega*omega)/g; // deep water guess
+      let k = (omega*omega)/g;
       for(let it=0; it<60; it++){
         const kh = k*h;
         const th = Math.tanh(kh);
@@ -62,7 +66,9 @@
       return { omega, k, L: 2*Math.PI/k, kh: k*h };
     }
 
-    // ===== Fresnel C,S =====
+    // =========================
+    // Fresnel C,S (approx)
+    // =========================
     function fresnelCS(x){
       const sign = (x < 0) ? -1 : 1;
       x = Math.abs(x);
@@ -75,7 +81,7 @@
       const x2 = x*x;
       const t = 0.5*Math.PI*x2;
 
-      // asymptotic
+      // asymptotic for large x
       if (x > 1.6){
         const u  = 1/(Math.PI*x);
         const u2 = u*u;
@@ -144,6 +150,9 @@
       return C.abs(C.add(t1, t2));
     }
 
+    // =========================
+    // Color
+    // =========================
     function clamp01(x){ return Math.max(0, Math.min(1, x)); }
 
     function colormapViridisLike(t){
@@ -170,6 +179,9 @@
       return [253,231,37];
     }
 
+    // =========================
+    // Canvas helpers
+    // =========================
     function clearCanvas(){ ctx.clearRect(0,0,canvas.width, canvas.height); }
 
     function drawBreakwaterLine(y0Pix, y1Pix, xPix){
@@ -194,6 +206,130 @@
       ctx.restore();
     }
 
+    // =========================
+    // Contours: marching squares
+    // =========================
+    function lerp(a,b,t){ return a + (b-a)*t; }
+
+    function physToPix(xPhys, yPhys, padL, padT, W, H, xMax, yMax){
+      const x = padL + (xPhys/xMax) * (W-1);
+      const y = padT + (H-1) - (yPhys/yMax) * (H-1);
+      return {x, y};
+    }
+
+    function marchingSquares(kd, nx, ny, dx, dy, level){
+      const segs = [];
+
+      function interp(p1, p2, v1, v2){
+        const t = (level - v1) / (v2 - v1 + 1e-15);
+        return { x: lerp(p1.x, p2.x, t), y: lerp(p1.y, p2.y, t) };
+      }
+
+      // edges: 0 bottom, 1 right, 2 top, 3 left
+      const lut = {
+        1:  [[3,0]],
+        2:  [[0,1]],
+        3:  [[3,1]],
+        4:  [[1,2]],
+        5:  [[3,2],[0,1]],
+        6:  [[0,2]],
+        7:  [[3,2]],
+        8:  [[2,3]],
+        9:  [[0,2]],
+        10: [[0,3],[1,2]],
+        11: [[1,2]],
+        12: [[1,3]],
+        13: [[0,1]],
+        14: [[3,0]],
+      };
+
+      for(let j=0; j<ny-1; j++){
+        for(let i=0; i<nx-1; i++){
+          const v00 = kd[j*nx + i];
+          const v10 = kd[j*nx + (i+1)];
+          const v01 = kd[(j+1)*nx + i];
+          const v11 = kd[(j+1)*nx + (i+1)];
+
+          const p00 = {x:i*dx,     y:j*dy};
+          const p10 = {x:(i+1)*dx, y:j*dy};
+          const p01 = {x:i*dx,     y:(j+1)*dy};
+          const p11 = {x:(i+1)*dx, y:(j+1)*dy};
+
+          const idx =
+            ((v00 >= level) ? 1 : 0) |
+            ((v10 >= level) ? 2 : 0) |
+            ((v11 >= level) ? 4 : 0) |
+            ((v01 >= level) ? 8 : 0);
+
+          if (idx === 0 || idx === 15) continue;
+
+          const e = new Array(4);
+          if ((idx & 1) !== (idx & 2)) e[0] = interp(p00, p10, v00, v10);
+          if ((idx & 2) !== (idx & 4)) e[1] = interp(p10, p11, v10, v11);
+          if ((idx & 8) !== (idx & 4)) e[2] = interp(p01, p11, v01, v11);
+          if ((idx & 1) !== (idx & 8)) e[3] = interp(p00, p01, v00, v01);
+
+          const pairs = lut[idx];
+          if (!pairs) continue;
+
+          for (const [a,b] of pairs){
+            if (e[a] && e[b]) segs.push([e[a], e[b]]);
+          }
+        }
+      }
+      return segs;
+    }
+
+    function drawContoursAndLabels(opts){
+      const { ctx, padL, padT, W, H, xMax, yMax, dx, dy, nx, ny, kd, levels } = opts;
+
+      ctx.save();
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = "rgba(0,0,0,0.85)";
+      ctx.fillStyle = "rgba(0,0,0,0.95)";
+      ctx.font = "13px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+
+      for (const level of levels){
+        const segs = marchingSquares(kd, nx, ny, dx, dy, level);
+
+        // draw all segments
+        ctx.beginPath();
+        for (const seg of segs){
+          const a = physToPix(seg[0].x, seg[0].y, padL, padT, W, H, xMax, yMax);
+          const b = physToPix(seg[1].x, seg[1].y, padL, padT, W, H, xMax, yMax);
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+        }
+        ctx.stroke();
+
+        // labels on a few segments
+        const step = Math.max(1, Math.floor(segs.length / 6));
+        const label = level.toFixed(1);
+
+        for (let s=0; s<segs.length; s+=step){
+          const midPhys = {
+            x: 0.5*(segs[s][0].x + segs[s][1].x),
+            y: 0.5*(segs[s][0].y + segs[s][1].y)
+          };
+          const mid = physToPix(midPhys.x, midPhys.y, padL, padT, W, H, xMax, yMax);
+
+          // white halo for readability
+          ctx.save();
+          ctx.lineWidth = 3.5;
+          ctx.strokeStyle = "rgba(255,255,255,0.85)";
+          ctx.strokeText(label, mid.x + 4, mid.y - 4);
+          ctx.restore();
+
+          ctx.fillText(label, mid.x + 4, mid.y - 4);
+        }
+      }
+
+      ctx.restore();
+    }
+
+    // =========================
+    // Main compute + plot
+    // =========================
     async function computeAndPlot(){
       stopFlag = false;
       plotBtn.disabled = true;
@@ -220,17 +356,15 @@
 
       statusEl.textContent = "Computing…";
 
-      // dispersion first, because nondim scaling may depend on L
       const disp = solveK(T, h);
       const L = (isFinite(L_override) && L_override > 0) ? L_override : disp.L;
 
-      // >>> IMPORTANT UPDATE: interpret dx,dy,xMax,yMax as nondimensional if checked
-      // nondim inputs mean: xMax = (xMax)*L, dx=(dx)*L, etc.
+      // nondim means dx,dy,xMax,yMax given in units of L
       if (useNondim) {
-        dx   = dx   * L;
-        dy   = dy   * L;
-        xMax = xMax * L;
-        yMax = yMax * L;
+        dx   *= L;
+        dy   *= L;
+        xMax *= L;
+        yMax *= L;
       }
 
       const k = 2*Math.PI/L;
@@ -245,8 +379,7 @@
       const nx = Math.floor(xMax/dx) + 1;
       const ny = Math.floor(yMax/dy) + 1;
 
-      // safety: avoid locking browser
-      const MAX_POINTS = 450000; // ~450k pixels in kd buffer is ok in JS; above that you risk freezing
+      const MAX_POINTS = 450000;
       if (nx*ny > MAX_POINTS) {
         statusEl.textContent =
           `Grid too large (${nx}×${ny} = ${nx*ny}). Increase dx,dy or reduce xMax,yMax.`;
@@ -259,7 +392,6 @@
       const theta0 = thetaIncDeg * Math.PI/180;
 
       const chunkRows = 6;
-      let maxKd = 0;
 
       for(let iy=0; iy<ny; iy+=chunkRows){
         if(stopFlag) break;
@@ -271,10 +403,7 @@
             const x = i*dx;
             const r = Math.hypot(x,y);
             const theta = Math.atan2(y,x);
-            const val = bettesKdAtPoint(r, theta, L, theta0);
-            const idx = j*nx + i;
-            kd[idx] = val;
-            if(val > maxKd) maxKd = val;
+            kd[j*nx + i] = bettesKdAtPoint(r, theta, L, theta0);
           }
         }
 
@@ -289,8 +418,7 @@
         return;
       }
 
-      const invMax = 1/(maxKd + 1e-12);
-
+      // ===== Render filled map =====
       clearCanvas();
 
       const padL = 54, padB = 40, padT = 14, padR = 14;
@@ -300,15 +428,18 @@
       const img = ctx.createImageData(W, H);
       const data = img.data;
 
+      function kdAtPhys(xPhys, yPhys){
+        const ix = Math.min(nx-1, Math.max(0, Math.round(xPhys/dx)));
+        const iy = Math.min(ny-1, Math.max(0, Math.round(yPhys/dy)));
+        const v  = kd[iy*nx + ix];
+        return Math.max(0, Math.min(1, v));
+      }
+
       for(let py=0; py<H; py++){
         const yPhys = (H-1-py) * (yMax/(H-1));
-        const jy = Math.min(ny-1, Math.round(yPhys/dy));
-
         for(let px=0; px<W; px++){
           const xPhys = px * (xMax/(W-1));
-          const ix = Math.min(nx-1, Math.round(xPhys/dx));
-
-          const v = kd[jy*nx + ix] * invMax;
+          const v = kdAtPhys(xPhys, yPhys);
           const rgb = colormapViridisLike(v);
 
           const p = 4*(py*W + px);
@@ -321,6 +452,7 @@
 
       ctx.putImageData(img, padL, padT);
 
+      // frame
       ctx.save();
       ctx.strokeStyle = "rgba(255,255,255,0.20)";
       ctx.lineWidth = 1;
@@ -330,7 +462,17 @@
       // breakwater at x=0
       drawBreakwaterLine(padT, padT + H, padL);
 
+      // axes labels
       drawAxesLabels(useNondim ? "x/L" : "x (m)", useNondim ? "y/L" : "y (m)");
+
+      // ===== Contours + labels =====
+      const levels = [0.2,0.3,0.4,0.5,0.6,0.7,0.8];
+      drawContoursAndLabels({
+        ctx, padL, padT, W, H,
+        xMax, yMax,
+        dx, dy, nx, ny, kd,
+        levels
+      });
 
       statusEl.textContent = `Done. Grid: ${nx} × ${ny}.`;
       plotBtn.disabled = false;
@@ -349,7 +491,7 @@
     ctx.fillText("Ready. Click Plot.", 80, 130);
   }
 
-  // >>> IMPORTANT UPDATE: init must be robust even if you forgot `defer`
+  // robust init (works with or without defer)
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);
   } else {
