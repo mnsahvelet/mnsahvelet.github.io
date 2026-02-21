@@ -4,7 +4,7 @@
   const g = 9.81;
   const el = (id) => document.getElementById(id);
 
-  function init(){
+  function init() {
     const TEl      = el("T");
     const hEl      = el("h");
     const LEl      = el("L");
@@ -33,11 +33,9 @@
     }
 
     let stopFlag = false;
-
-    // Prove JS loaded
     statusEl.textContent = "JS loaded. Click Plot.";
 
-    // ===== Complex =====
+    // ===== Complex (minimal) =====
     class C {
       constructor(re, im){ this.re = re; this.im = im; }
       static add(a,b){ return new C(a.re+b.re, a.im+b.im); }
@@ -49,8 +47,8 @@
     // ===== Dispersion =====
     function solveK(T, h){
       const omega = 2*Math.PI / T;
-      let k = (omega*omega)/g;
-      for(let it=0; it<40; it++){
+      let k = (omega*omega)/g; // deep water guess
+      for(let it=0; it<60; it++){
         const kh = k*h;
         const th = Math.tanh(kh);
         const sech2 = 1/(Math.cosh(kh)**2);
@@ -61,7 +59,7 @@
         if(!isFinite(k) || k<=0) break;
         if(Math.abs(dk)/k < 1e-12) break;
       }
-      return {omega, k, L: 2*Math.PI/k, kh: k*h};
+      return { omega, k, L: 2*Math.PI/k, kh: k*h };
     }
 
     // ===== Fresnel C,S =====
@@ -77,6 +75,7 @@
       const x2 = x*x;
       const t = 0.5*Math.PI*x2;
 
+      // asymptotic
       if (x > 1.6){
         const u  = 1/(Math.PI*x);
         const u2 = u*u;
@@ -88,6 +87,7 @@
         return { C: sign*Cx, S: sign*Sx };
       }
 
+      // power series
       let Csum = 0, Ssum = 0;
       const a = Math.PI/2;
 
@@ -97,7 +97,7 @@
       Csum += termC;
       Ssum += termS;
 
-      for(let n=1; n<40; n++){
+      for(let n=1; n<60; n++){
         const num = -a*a*x*x*x*x;
 
         const denC = (2*n-1)*(2*n)*(4*n+1);
@@ -203,11 +203,13 @@
       const h = parseFloat(hEl.value);
       const L_override = parseFloat(LEl.value);
 
-      const dx = parseFloat(dxEl.value);
-      const dy = parseFloat(dyEl.value);
-      const xMax = parseFloat(xMaxEl.value);
-      const yMax = parseFloat(yMaxEl.value);
+      let dx = parseFloat(dxEl.value);
+      let dy = parseFloat(dyEl.value);
+      let xMax = parseFloat(xMaxEl.value);
+      let yMax = parseFloat(yMaxEl.value);
+
       const thetaIncDeg = parseFloat(thIncEl.value);
+      const useNondim = !!(nondimEl && nondimEl.checked);
 
       if(!(T>0) || !(h>0) || !(dx>0) || !(dy>0) || !(xMax>0) || !(yMax>0)){
         statusEl.textContent = "Invalid inputs: all must be > 0.";
@@ -218,8 +220,18 @@
 
       statusEl.textContent = "Computing…";
 
+      // dispersion first, because nondim scaling may depend on L
       const disp = solveK(T, h);
       const L = (isFinite(L_override) && L_override > 0) ? L_override : disp.L;
+
+      // >>> IMPORTANT UPDATE: interpret dx,dy,xMax,yMax as nondimensional if checked
+      // nondim inputs mean: xMax = (xMax)*L, dx=(dx)*L, etc.
+      if (useNondim) {
+        dx   = dx   * L;
+        dy   = dy   * L;
+        xMax = xMax * L;
+        yMax = yMax * L;
+      }
 
       const k = 2*Math.PI/L;
       const omega = disp.omega;
@@ -232,6 +244,16 @@
 
       const nx = Math.floor(xMax/dx) + 1;
       const ny = Math.floor(yMax/dy) + 1;
+
+      // safety: avoid locking browser
+      const MAX_POINTS = 450000; // ~450k pixels in kd buffer is ok in JS; above that you risk freezing
+      if (nx*ny > MAX_POINTS) {
+        statusEl.textContent =
+          `Grid too large (${nx}×${ny} = ${nx*ny}). Increase dx,dy or reduce xMax,yMax.`;
+        plotBtn.disabled = false;
+        stopBtn.disabled = true;
+        return;
+      }
 
       const kd = new Float32Array(nx*ny);
       const theta0 = thetaIncDeg * Math.PI/180;
@@ -305,9 +327,9 @@
       ctx.strokeRect(padL+0.5, padT+0.5, W-1, H-1);
       ctx.restore();
 
+      // breakwater at x=0
       drawBreakwaterLine(padT, padT + H, padL);
 
-      const useNondim = nondimEl.checked;
       drawAxesLabels(useNondim ? "x/L" : "x (m)", useNondim ? "y/L" : "y (m)");
 
       statusEl.textContent = `Done. Grid: ${nx} × ${ny}.`;
@@ -327,6 +349,10 @@
     ctx.fillText("Ready. Click Plot.", 80, 130);
   }
 
-  // Because this file is loaded with `defer`, DOM is already parsed.
-  init();
+  // >>> IMPORTANT UPDATE: init must be robust even if you forgot `defer`
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
 })();
