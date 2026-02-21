@@ -68,7 +68,7 @@
     }
 
     // ============================================================
-    // Fresnel integrals C(x), S(x) (accurate, MATLAB-like)
+    // Fresnel integrals C(x), S(x) (Cephes-like, accurate)
     // ============================================================
     function fresnelCS(x){
       const ax = Math.abs(x);
@@ -90,7 +90,7 @@
         return ans;
       }
 
-      // Rational approximations
+      // rational approximations for small/moderate x
       const SN = [
         -2.99181919401019853726E3,
          7.08840045257738576863E5,
@@ -137,6 +137,7 @@
         const denS = p1evl(t, SD);
         Sval = ax * x2 * numS / denS;
       } else {
+        // asymptotic expansions for large x
         const FN = [
           4.21543555043677546506E-1,
           1.43407919780758885261E-1,
@@ -198,8 +199,8 @@
         const u = 1/(Math.PI*ax);
         const uu = u*u;
 
-        const f = u  * polevl(uu, FN) / p1evl(uu, FD);
-        const gg= uu * polevl(uu, GN) / p1evl(uu, GD);
+        const f  = u  * polevl(uu, FN) / p1evl(uu, FD);
+        const gg = uu * polevl(uu, GN) / p1evl(uu, GD);
 
         Cval = 0.5 + f*s - gg*c;
         Sval = 0.5 - f*c - gg*s;
@@ -209,23 +210,22 @@
     }
 
     // ============================================================
-    // Penney-Price / Sommerfeld factor:
+    // Penney-Price / Sommerfeld factor (matches your MATLAB)
     // F = (1+i)/2 * ( (1-i)/2 + C(sigma) - i S(sigma) )
     // ============================================================
     function bettesF(sigma){
       const {C: M, S: N} = fresnelCS(sigma);
-      const inside = new C(0.5 + M, -(0.5 + N)); // (0.5+M) - i(0.5+N)
-      const pref   = new C(0.5, 0.5);            // (1+i)/2
+      const inside = new C(0.5 + M, -(0.5 + N));
+      const pref   = new C(0.5, 0.5);
       return C.mul(pref, inside);
     }
 
     // ============================================================
     // Kd at a single point (MATCH MATLAB FORM)
-    // IMPORTANT: no clamping here (only clamp for color)
-    // IMPORTANT: theta wrapped to [0,2pi) before calling this (MATLAB mod)
     // ============================================================
     function bettesKdAtPoint(r, theta, L, theta0){
       const rSafe = Math.max(r, 1e-6);
+
       const k = 2*Math.PI/L;
       const fac = 2*Math.sqrt(k*rSafe/Math.PI);
 
@@ -301,19 +301,17 @@
     }
 
     // ============================================================
-    // Contours: marching squares (draw only, MATLAB-like look)
-    // NOTE: for a "contourf-like" look, we already draw filled map.
-    // Here we overlay contour lines + sparse labels.
+    // Contours: marching squares + sparse labels
     // ============================================================
     function lerp(a,b,t){ return a + (b-a)*t; }
 
-    function physToPix(xPhys, yPhys, padL, padT, W, H, xMax, yMax){
-      const x = padL + (xPhys/xMax) * (W-1);
-      const y = padT + (H-1) - (yPhys/yMax) * (H-1);
+    function plotToPix(xPlot, yPlot, padL, padT, W, H, xMaxPlot, yMaxPlot){
+      const x = padL + (xPlot/xMaxPlot) * (W-1);
+      const y = padT + (H-1) - (yPlot/yMaxPlot) * (H-1);
       return {x, y};
     }
 
-    function marchingSquares(kd, nx, ny, dx, dy, level){
+    function marchingSquares(kd, nx, ny, dxPlot, dyPlot, level){
       const segs = [];
 
       function interp(p1, p2, v1, v2){
@@ -339,6 +337,9 @@
         14: [[3,0]],
       };
 
+      // IMPORTANT:
+      // kd indexing is still on the physical grid (i,j).
+      // marching squares only needs dxPlot/dyPlot for GEOMETRY.
       for(let j=0; j<ny-1; j++){
         for(let i=0; i<nx-1; i++){
           const v00 = kd[j*nx + i];
@@ -346,10 +347,10 @@
           const v01 = kd[(j+1)*nx + i];
           const v11 = kd[(j+1)*nx + (i+1)];
 
-          const p00 = {x:i*dx,     y:j*dy};
-          const p10 = {x:(i+1)*dx, y:j*dy};
-          const p01 = {x:i*dx,     y:(j+1)*dy};
-          const p11 = {x:(i+1)*dx, y:(j+1)*dy};
+          const p00 = {x:i*dxPlot,     y:j*dyPlot};
+          const p10 = {x:(i+1)*dxPlot, y:j*dyPlot};
+          const p01 = {x:i*dxPlot,     y:(j+1)*dyPlot};
+          const p11 = {x:(i+1)*dxPlot, y:(j+1)*dyPlot};
 
           const idx =
             ((v00 >= level) ? 1 : 0) |
@@ -377,7 +378,12 @@
     }
 
     function drawContoursAndLabels(opts){
-      const { ctx, padL, padT, W, H, xMax, yMax, dx, dy, nx, ny, kd, levels } = opts;
+      const {
+        ctx, padL, padT, W, H,
+        xMaxPlot, yMaxPlot,
+        dxPlot, dyPlot,
+        nx, ny, kd, levels
+      } = opts;
 
       ctx.save();
       ctx.lineWidth = 1.4;
@@ -385,16 +391,14 @@
       ctx.fillStyle = "rgba(0,0,0,0.95)";
       ctx.font = "13px system-ui, -apple-system, Segoe UI, Roboto, Arial";
 
-      // label strategy: for each level, place at most ~6 labels,
-      // and avoid near x=0 where segments are extremely dense.
       for (const level of levels){
-        const segs = marchingSquares(kd, nx, ny, dx, dy, level);
+        const segs = marchingSquares(kd, nx, ny, dxPlot, dyPlot, level);
 
         // draw segments
         ctx.beginPath();
         for (const seg of segs){
-          const a = physToPix(seg[0].x, seg[0].y, padL, padT, W, H, xMax, yMax);
-          const b = physToPix(seg[1].x, seg[1].y, padL, padT, W, H, xMax, yMax);
+          const a = plotToPix(seg[0].x, seg[0].y, padL, padT, W, H, xMaxPlot, yMaxPlot);
+          const b = plotToPix(seg[1].x, seg[1].y, padL, padT, W, H, xMaxPlot, yMaxPlot);
           ctx.moveTo(a.x, a.y);
           ctx.lineTo(b.x, b.y);
         }
@@ -402,21 +406,21 @@
 
         if (segs.length === 0) continue;
 
+        // label sparse, avoid x very close to 0
         const label = level.toFixed(1);
         const desired = 6;
         const step = Math.max(1, Math.floor(segs.length / desired));
 
         let placed = 0;
         for (let s=0; s<segs.length && placed<desired; s+=step){
-          const midPhys = {
+          const midPlot = {
             x: 0.5*(segs[s][0].x + segs[s][1].x),
             y: 0.5*(segs[s][0].y + segs[s][1].y)
           };
 
-          // skip left-edge crowding (like your MATLAB figure, labels are not all at x~0)
-          if (midPhys.x < 0.06*xMax) continue;
+          if (midPlot.x < 0.06*xMaxPlot) continue;
 
-          const mid = physToPix(midPhys.x, midPhys.y, padL, padT, W, H, xMax, yMax);
+          const mid = plotToPix(midPlot.x, midPlot.y, padL, padT, W, H, xMaxPlot, yMaxPlot);
 
           // halo
           ctx.save();
@@ -445,10 +449,10 @@
       const h = parseFloat(hEl.value);
       const L_override = parseFloat(LEl.value);
 
-      let dx = parseFloat(dxEl.value);
-      let dy = parseFloat(dyEl.value);
-      let xMax = parseFloat(xMaxEl.value);
-      let yMax = parseFloat(yMaxEl.value);
+      const dx = parseFloat(dxEl.value);
+      const dy = parseFloat(dyEl.value);
+      const xMax = parseFloat(xMaxEl.value);
+      const yMax = parseFloat(yMaxEl.value);
 
       const thetaIncDeg = parseFloat(thIncEl.value);
       const doNonDim = !!(nondimEl && nondimEl.checked);
@@ -466,10 +470,6 @@
       const disp = solveK(T, h);
       const L = (isFinite(L_override) && L_override > 0) ? L_override : disp.L;
 
-      // IMPORTANT: match your MATLAB checkbox behavior:
-      // in MATLAB, you compute in physical meters, and only divide axes by L at plot-time.
-      // So we do NOT scale dx/xMax when doNonDim is checked.
-
       const k = 2*Math.PI/L;
       const omega = disp.omega;
       const kh = k*h;
@@ -479,6 +479,7 @@
       if (outL)     outL.textContent     = L.toFixed(4);
       if (outKh)    outKh.textContent    = kh.toFixed(4);
 
+      // grid (physical)
       const nx = Math.floor(xMax/dx) + 1;
       const ny = Math.floor(yMax/dy) + 1;
 
@@ -494,9 +495,9 @@
       const kd = new Float32Array(nx*ny);
       const theta0 = thetaIncDeg * Math.PI/180;
 
-      // adaptive chunking
       const chunkRows = (nx*ny > 600000) ? 2 : 6;
 
+      // compute kd on physical grid (meters), wrap theta like MATLAB mod(atan2d,360)
       for(let iy=0; iy<ny; iy+=chunkRows){
         if(stopFlag) break;
 
@@ -507,8 +508,7 @@
             const x = i*dx;
             const r = Math.hypot(x,y);
 
-            // MATCH MATLAB: theta wrapped to [0, 2pi)
-            let theta = Math.atan2(y,x);
+            let theta = Math.atan2(y,x); // [-pi,pi]
             if (theta < 0) theta += 2*Math.PI;
 
             kd[j*nx + i] = bettesKdAtPoint(r, theta, L, theta0);
@@ -527,7 +527,17 @@
       }
 
       // ============================================================
-      // Render filled map + contour overlay
+      // Plot scaling:
+      // MATCH MATLAB behavior:
+      // compute in meters, but when nondim checked plot x/L, y/L.
+      // ============================================================
+      const xMaxPlot = doNonDim ? (xMax / L) : xMax;
+      const yMaxPlot = doNonDim ? (yMax / L) : yMax;
+      const dxPlot   = doNonDim ? (dx   / L) : dx;
+      const dyPlot   = doNonDim ? (dy   / L) : dy;
+
+      // ============================================================
+      // Render filled map + contour overlay (in plot coordinates)
       // ============================================================
       clearCanvas();
 
@@ -538,7 +548,7 @@
       const img = ctx.createImageData(W, H);
       const data = img.data;
 
-      // nearest-neighbor sampler
+      // nearest-neighbor sampler on physical kd-grid
       function kdAtPhys(xPhys, yPhys){
         const ix = Math.min(nx-1, Math.max(0, Math.round(xPhys/dx)));
         const iy = Math.min(ny-1, Math.max(0, Math.round(yPhys/dy)));
@@ -546,9 +556,13 @@
       }
 
       for(let py=0; py<H; py++){
-        const yPhys = (H-1-py) * (yMax/(H-1));
+        const yPlot = (H-1-py) * (yMaxPlot/(H-1));
+        const yPhys = doNonDim ? (yPlot * L) : yPlot;
+
         for(let px=0; px<W; px++){
-          const xPhys = px * (xMax/(W-1));
+          const xPlot = px * (xMaxPlot/(W-1));
+          const xPhys = doNonDim ? (xPlot * L) : xPlot;
+
           const v = clamp01(kdAtPhys(xPhys, yPhys)); // clamp only for colors
           const rgb = colormapViridisLike(v);
 
@@ -569,18 +583,20 @@
       ctx.strokeRect(padL+0.5, padT+0.5, W-1, H-1);
       ctx.restore();
 
-      // breakwater at x=0 (semi-infinite: x=0 for y>=0)
+      // breakwater at x=0 in plot-units
+      // x=0 is always the left boundary, so same pixel line
       drawBreakwaterLine(padT, padT + H, padL);
 
-      // axes labels: like MATLAB checkbox behavior (only text changes)
+      // axis labels
       drawAxesLabels(doNonDim ? "x/L" : "x (m)", doNonDim ? "y/L" : "y (m)");
 
-      // contour overlay (MATLAB-like levels)
+      // contour overlay computed from kd-grid, drawn in plot units
       const levels = [0.2,0.3,0.4,0.5,0.6,0.7,0.8];
       drawContoursAndLabels({
         ctx, padL, padT, W, H,
-        xMax, yMax,
-        dx, dy, nx, ny, kd,
+        xMaxPlot, yMaxPlot,
+        dxPlot, dyPlot,
+        nx, ny, kd,
         levels
       });
 
