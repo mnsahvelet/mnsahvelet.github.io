@@ -3,15 +3,17 @@
 
   const el = (id) => document.getElementById(id);
 
-  // Chart bounds (match your MATLAB stable limits)
+  // ===== Chart bounds (match MATLAB stable limits) =====
   const XMIN = 1e-2, XMAX = 1e1;
   const YMIN = 1e-3, YMAX = 1;
 
-  let CURVES = null; // loaded from curves.json
+  // IMPORTANT: absolute path from site root (GitHub Pages)
+  const CURVES_URL = "/assets/tools/wave-theory-check/curves.json";
 
-  function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+  let CURVES = null;
 
-  function log10(x){ return Math.log(x) / Math.LN10; }
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function log10(x) { return Math.log(x) / Math.LN10; }
 
   // Map data (log space) -> canvas pixels
   function makeMapper(canvas) {
@@ -24,11 +26,11 @@
     const lx0 = log10(XMIN), lx1 = log10(XMAX);
     const ly0 = log10(YMIN), ly1 = log10(YMAX);
 
-    function x2px(x){
+    function x2px(x) {
       const t = (log10(x) - lx0) / (lx1 - lx0);
       return padL + t * (W - padL - padR);
     }
-    function y2px(y){
+    function y2px(y) {
       const t = (log10(y) - ly0) / (ly1 - ly0);
       return (H - padB) - t * (H - padT - padB);
     }
@@ -49,8 +51,8 @@
     ctx.strokeStyle = "#262626";
     ctx.lineWidth = 1;
 
-    const xDec = [-2,-1,0,1]; // 1e-2..1e1
-    const yDec = [-3,-2,-1,0]; // 1e-3..1
+    const xDec = [-2, -1, 0, 1];   // 1e-2..1e1
+    const yDec = [-3, -2, -1, 0];  // 1e-3..1
     for (const d of xDec) {
       const x = Math.pow(10, d);
       const xp = map.x2px(x);
@@ -124,7 +126,6 @@
     const yTop = padT;
     const yBot = H - padB;
 
-    // light bands (same idea as your MATLAB area alpha)
     ctx.save();
     ctx.fillStyle = "rgba(255,255,255,0.05)";
     ctx.fillRect(Xp0, yTop, Xp1 - Xp0, yBot - yTop);
@@ -191,27 +192,24 @@
     ctx.restore();
   }
 
-  // log-log interpolation for y(x) on a curve (x must be >0)
+  // log-log interpolation for y(x) on a curve
   function interpLogLog(xArr, yArr, x0) {
-    // Filter valid
     const pts = [];
     for (let i = 0; i < xArr.length; i++) {
       const x = xArr[i], y = yArr[i];
-      if (x > 0 && y > 0 && isFinite(x) && isFinite(y)) pts.push([x, y]);
+      if (x > 0 && y > 0 && Number.isFinite(x) && Number.isFinite(y)) pts.push([x, y]);
     }
     if (pts.length < 2) return NaN;
 
-    // Sort by x
-    pts.sort((a,b) => a[0]-b[0]);
+    pts.sort((a, b) => a[0] - b[0]);
 
-    if (x0 < pts[0][0] || x0 > pts[pts.length-1][0]) return NaN;
+    if (x0 < pts[0][0] || x0 > pts[pts.length - 1][0]) return NaN;
 
-    // Find bracketing interval
     let j = 0;
-    while (j < pts.length-2 && pts[j+1][0] < x0) j++;
+    while (j < pts.length - 2 && pts[j + 1][0] < x0) j++;
 
     const x1 = pts[j][0], y1 = pts[j][1];
-    const x2 = pts[j+1][0], y2 = pts[j+1][1];
+    const x2 = pts[j + 1][0], y2 = pts[j + 1][1];
 
     const lx1 = log10(x1), lx2 = log10(x2), lx0 = log10(x0);
     const ly1 = log10(y1), ly2 = log10(y2);
@@ -231,11 +229,11 @@
     const yAtX = [];
     for (const c of curves) {
       const y = interpLogLog(c.x, c.y, xpoint);
-      if (isFinite(y)) yAtX.push(y);
+      if (Number.isFinite(y)) yAtX.push(y);
     }
     if (yAtX.length === 0) return "Unknown theory region";
 
-    yAtX.sort((a,b) => a-b);
+    yAtX.sort((a, b) => a - b);
 
     if (ypoint <= yAtX[0]) return "Airy (Linear theory)";
     if (yAtX.length >= 2 && ypoint <= yAtX[1]) return "Stokes 2nd order";
@@ -246,7 +244,6 @@
   function drawPointAndLabel(map, xpoint, ypoint, labelStr) {
     const { ctx } = map;
 
-    // point
     const xp = map.x2px(clamp(xpoint, XMIN, XMAX));
     const yp = map.y2px(clamp(ypoint, YMIN, YMAX));
 
@@ -268,7 +265,7 @@
     ctx.font = "13px system-ui, -apple-system, Segoe UI, Roboto, Arial";
     ctx.fillText("your case", xp + 10, yp - 8);
 
-    // info box (top-left inside plot)
+    // info box
     const boxX = map.padL + 12;
     const boxY = map.padT + 34;
     const lines = labelStr.split("\n");
@@ -279,8 +276,8 @@
     for (const ln of lines) wMax = Math.max(wMax, ctx.measureText(ln).width);
 
     const pad = 8;
-    const boxW = wMax + 2*pad;
-    const boxH = lines.length * lineH + 2*pad;
+    const boxW = wMax + 2 * pad;
+    const boxH = lines.length * lineH + 2 * pad;
 
     ctx.fillStyle = "rgba(255,255,255,0.92)";
     ctx.strokeStyle = "rgba(60,60,60,0.9)";
@@ -301,9 +298,17 @@
   }
 
   async function loadCurves() {
-    const resp = await fetch("curves.json", { cache: "no-store" });
-    if (!resp.ok) throw new Error("Could not load curves.json");
-    return resp.json();
+    const resp = await fetch(CURVES_URL, { cache: "no-store" });
+    if (!resp.ok) {
+      throw new Error(`HTTP ${resp.status} loading ${CURVES_URL}`);
+    }
+    const data = await resp.json();
+
+    // light validation (prevents silent failures)
+    if (!data || !Array.isArray(data.curves) || typeof data.xline1 !== "number" || typeof data.xline2 !== "number") {
+      throw new Error("curves.json has unexpected structure");
+    }
+    return data;
   }
 
   function computeAndPlot() {
@@ -321,8 +326,8 @@
       return;
     }
 
-    const xpoint = D / (T*T);
-    const ypoint = H / (T*T);
+    const xpoint = D / (T * T);
+    const ypoint = H / (T * T);
 
     const xline1 = CURVES.xline1;
     const xline2 = CURVES.xline2;
@@ -330,7 +335,6 @@
     const depthRegion = classifyDepthRegion(xpoint, xline1, xline2);
     const theoryRegion = classifyTheoryRegion(xpoint, ypoint, CURVES.curves);
 
-    // draw
     drawAxes(map);
     shadeDepthBands(map, xline1, xline2);
     drawVerticalSeparators(map, xline1, xline2);
@@ -352,13 +356,14 @@
   }
 
   async function init() {
-    CURVES = await loadCurves();
+    const canvas = el("chart");
+    if (!canvas) throw new Error("Canvas #chart not found.");
 
     // polyfill for roundRect (older browsers)
-    const ctx = el("chart").getContext("2d");
+    const ctx = canvas.getContext("2d");
     if (!ctx.roundRect) {
-      CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
-        const rr = Math.min(r, w/2, h/2);
+      CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+        const rr = Math.min(r, w / 2, h / 2);
         this.beginPath();
         this.moveTo(x + rr, y);
         this.arcTo(x + w, y, x + w, y + h, rr);
@@ -370,13 +375,19 @@
       };
     }
 
-    el("plotBtn").addEventListener("click", computeAndPlot);
+    CURVES = await loadCurves();
+
+    const btn = el("plotBtn");
+    if (!btn) throw new Error("Button #plotBtn not found.");
+    btn.addEventListener("click", computeAndPlot);
+
     computeAndPlot();
   }
 
   init().catch((e) => {
     console.error(e);
-    el("out").textContent = "Failed to load curves. Check curves.json path.";
+    const out = el("out");
+    if (out) out.textContent = `Failed to load curves.\n${e.message}\n\nCheck: ${CURVES_URL}`;
   });
 
 })();
