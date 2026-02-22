@@ -1,3 +1,10 @@
+---
+title: "Wave Theory Checker"
+permalink: /tools/wave-theory-check/
+layout: single
+author_profile: false
+---
+
 <div class="wrap" style="max-width:980px;margin:0 auto;">
   <h2>Wave Theory Checker (Le Méhauté Validity Chart)</h2>
   <p>Enter wave height, period, and water depth. The tool plots your case on the Le Méhauté (1976) chart and reports depth regime and recommended theory order.</p>
