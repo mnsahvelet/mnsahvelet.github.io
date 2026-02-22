@@ -3,17 +3,24 @@
 
   const el = (id) => document.getElementById(id);
 
-  // ===== Chart bounds (match MATLAB stable limits) =====
+  // ===== Chart bounds (log-log) =====
   const XMIN = 1e-2, XMAX = 1e1;
   const YMIN = 1e-3, YMAX = 1;
-
-  // IMPORTANT: absolute path from site root (GitHub Pages)
-  const CURVES_URL = "/assets/tools/wave-theory-check/curves.json";
 
   let CURVES = null;
 
   function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
   function log10(x) { return Math.log(x) / Math.LN10; }
+
+  // Resolve curves.json relative to THIS script file (robust on GitHub Pages)
+  function curvesUrl() {
+    const script = document.currentScript;
+    if (script && script.src) {
+      return new URL("curves.json", script.src).toString();
+    }
+    // Fallback: relative to current page
+    return "curves.json";
+  }
 
   // Map data (log space) -> canvas pixels
   function makeMapper(canvas) {
@@ -30,6 +37,7 @@
       const t = (log10(x) - lx0) / (lx1 - lx0);
       return padL + t * (W - padL - padR);
     }
+
     function y2px(y) {
       const t = (log10(y) - ly0) / (ly1 - ly0);
       return (H - padB) - t * (H - padT - padB);
@@ -78,15 +86,11 @@
     // labels
     ctx.fillStyle = "#eaeaea";
     ctx.font = "16px system-ui, -apple-system, Segoe UI, Roboto, Arial";
-
-    // title
     ctx.fillText("Le Méhauté Wave Theory Validity (1976)", padL, padT + 18);
 
-    // x label
     ctx.font = "14px system-ui, -apple-system, Segoe UI, Roboto, Arial";
     ctx.fillText("D / T²", Math.floor((padL + (W - padR)) / 2) - 18, H - 18);
 
-    // y label (rotated)
     ctx.save();
     ctx.translate(18, Math.floor((padT + (H - padB)) / 2) + 10);
     ctx.rotate(-Math.PI / 2);
@@ -165,28 +169,25 @@
     ctx.lineWidth = 1.5;
 
     for (const c of curves) {
-      const x = c.x;
-      const y = c.y;
+      const xs = c.x;
+      const ys = c.y;
+      if (!Array.isArray(xs) || !Array.isArray(ys) || xs.length !== ys.length) continue;
 
       ctx.beginPath();
       let started = false;
 
-      for (let i = 0; i < x.length; i++) {
-        const xi = x[i], yi = y[i];
+      for (let i = 0; i < xs.length; i++) {
+        const xi = xs[i], yi = ys[i];
         if (!(xi > 0 && yi > 0)) continue;
         if (xi < XMIN || xi > XMAX || yi < YMIN || yi > YMAX) continue;
 
         const xp = map.x2px(xi);
         const yp = map.y2px(yi);
 
-        if (!started) {
-          ctx.moveTo(xp, yp);
-          started = true;
-        } else {
-          ctx.lineTo(xp, yp);
-        }
+        if (!started) { ctx.moveTo(xp, yp); started = true; }
+        else { ctx.lineTo(xp, yp); }
       }
-      ctx.stroke();
+      if (started) ctx.stroke();
     }
 
     ctx.restore();
@@ -202,7 +203,6 @@
     if (pts.length < 2) return NaN;
 
     pts.sort((a, b) => a[0] - b[0]);
-
     if (x0 < pts[0][0] || x0 > pts[pts.length - 1][0]) return NaN;
 
     let j = 0;
@@ -252,7 +252,6 @@
     ctx.fillStyle = "#ff5a5a";
     ctx.lineWidth = 2;
 
-    // star-ish marker
     const r = 7;
     ctx.beginPath();
     ctx.moveTo(xp - r, yp);
@@ -261,7 +260,6 @@
     ctx.lineTo(xp, yp + r);
     ctx.stroke();
 
-    // small label near point
     ctx.font = "13px system-ui, -apple-system, Segoe UI, Roboto, Arial";
     ctx.fillText("your case", xp + 10, yp - 8);
 
@@ -282,6 +280,7 @@
     ctx.fillStyle = "rgba(255,255,255,0.92)";
     ctx.strokeStyle = "rgba(60,60,60,0.9)";
     ctx.lineWidth = 1.2;
+
     ctx.beginPath();
     ctx.roundRect(boxX, boxY, boxW, boxH, 8);
     ctx.fill();
@@ -298,26 +297,28 @@
   }
 
   async function loadCurves() {
-    const resp = await fetch(CURVES_URL, { cache: "no-store" });
-    if (!resp.ok) {
-      throw new Error(`HTTP ${resp.status} loading ${CURVES_URL}`);
-    }
+    const url = curvesUrl();
+    const resp = await fetch(url, { cache: "no-store" });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status} loading ${url}`);
     const data = await resp.json();
 
-    // light validation (prevents silent failures)
-    if (!data || !Array.isArray(data.curves) || typeof data.xline1 !== "number" || typeof data.xline2 !== "number") {
+    // Validate expected structure
+    if (!data || typeof data.xline1 !== "number" || typeof data.xline2 !== "number" || !Array.isArray(data.curves)) {
       throw new Error("curves.json has unexpected structure");
     }
     return data;
   }
 
   function computeAndPlot() {
-    const H = Number(el("H").value);
-    const T = Number(el("T").value);
-    const D = Number(el("D").value);
-
     const outEl = el("out");
     const canvas = el("chart");
+
+    if (!outEl || !canvas) return;
+
+    const H = Number(el("H")?.value);
+    const T = Number(el("T")?.value);
+    const D = Number(el("D")?.value);
+
     const map = makeMapper(canvas);
 
     if (!(H > 0 && T > 0 && D > 0)) {
@@ -357,9 +358,11 @@
 
   async function init() {
     const canvas = el("chart");
+    const outEl = el("out");
     if (!canvas) throw new Error("Canvas #chart not found.");
+    if (!outEl) throw new Error("Output #out not found.");
 
-    // polyfill for roundRect (older browsers)
+    // roundRect polyfill
     const ctx = canvas.getContext("2d");
     if (!ctx.roundRect) {
       CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
@@ -387,7 +390,7 @@
   init().catch((e) => {
     console.error(e);
     const out = el("out");
-    if (out) out.textContent = `Failed to load curves.\n${e.message}\n\nCheck: ${CURVES_URL}`;
+    if (out) out.textContent = `Failed to load curves.\n${e.message}`;
   });
 
 })();
