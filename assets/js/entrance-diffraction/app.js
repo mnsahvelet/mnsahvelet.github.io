@@ -1,88 +1,77 @@
 (() => {
   "use strict";
 
-  const el = (id) => document.getElementById(id);
-
-  function fmt(x, nd=6) {
-    if (!isFinite(x)) return "NaN";
-    return x.toFixed(nd);
-  }
-
-  function setStatus(msg) {
-    el("status").textContent = msg;
+  function el(id) {
+    return document.getElementById(id);
   }
 
   function readParams() {
-    const T = parseFloat(el("T").value);
-    const d = parseFloat(el("d").value);
-    const Lb = parseFloat(el("Lb").value);
-    const theta0 = parseFloat(el("theta0").value);
-    const dx = parseFloat(el("dx").value);
-    const xMax = parseFloat(el("xMax").value);
-    const yMax = parseFloat(el("yMax").value);
-
-    if (![T,d,Lb,theta0,dx,xMax,yMax].every(v => isFinite(v))) {
-      throw new Error("All inputs must be numeric.");
-    }
-    if (T <= 0 || d <= 0) throw new Error("T and d must be > 0.");
-    if (Lb <= 0) throw new Error("Lb must be > 0.");
-    if (dx <= 0) throw new Error("dx must be > 0.");
-    if (xMax <= 0 || yMax <= 0) throw new Error("xMax and yMax must be > 0.");
-
-    const levels = window.ED_SOLVER.parseLevels(el("levels").value);
-
-    return { T, d, Lb, theta0, dx, xMax, yMax, levels };
+    return {
+      T: parseFloat(el("T").value),
+      d: parseFloat(el("d").value),
+      Lb: parseFloat(el("Lb").value),
+      theta0: parseFloat(el("theta0").value),
+      dx: parseFloat(el("dx").value),
+      xMax: parseFloat(el("xMax").value),
+      yMax: parseFloat(el("yMax").value)
+    };
   }
 
-  function updateOutputs(disp) {
-    el("out_omega").textContent = fmt(disp.omega, 6);
-    el("out_L").textContent     = fmt(disp.L, 4);
-    el("out_L0").textContent    = fmt(disp.L0, 4);
-    el("out_k").textContent     = fmt(disp.k, 8);
-    el("out_k0").textContent    = fmt(disp.k0, 8);
-    el("out_kh").textContent    = fmt(disp.kh, 4);
+  function updateDispersion(T, d) {
+    const out = window.ED_SOLVER.dispersionOutputs(T, d);
+
+    el("out_omega").textContent = out.omega.toFixed(6);
+    el("out_L").textContent = out.L.toFixed(4);
+    el("out_L0").textContent = out.L0.toFixed(4);
+    el("out_k").textContent = out.k.toFixed(8);
+    el("out_k0").textContent = out.k0.toFixed(8);
+    el("out_kh").textContent = out.kh.toFixed(4);
+
+    return out;
   }
 
-  async function update() {
+  function computeAndPlot() {
+    const status = el("status");
+    status.textContent = "Computing...";
+
     try {
-      setStatus("Computing…");
-      const p = readParams();
+      const params = readParams();
 
-      // dispersion outputs
-      const disp = window.ED_SOLVER.dispersionOutputs(p.T, p.d);
-      updateOutputs(disp);
+      // dispersion
+      updateDispersion(params.T, params.d);
 
-      // compute Kd grid
-      const t0 = performance.now();
+      // grid
       const out = window.ED_SOLVER.computeKdGrid(params);
-      plotKdMap("kdMapDiv", out.xvals, out.yvals, out.Kd, params.B);
-      const t1 = performance.now();
 
-      // centerline (loc=0 corresponds to first y row)
+      if (!out || !out.Kd) {
+        throw new Error("Solver returned invalid grid.");
+      }
+
+      // centerline = first row (loc = 0)
       const centerKd = out.Kd[0];
 
-      // plots
-      window.ED_PLOTS.plotMap("plotMap", out.xvals, out.yvals, out.Kd, p.Lb);
-      window.ED_PLOTS.plotCenterline("plotCenter", out.xvals, centerKd);
-      window.ED_PLOTS.plotContour("plotContour", out.xvals, out.yvals, out.Kd, p.Lb, p.levels);
+      const levelsStr = el("levels").value;
+      const levels = window.ED_SOLVER.parseLevels(levelsStr);
 
-      setStatus(`Done. Grid: ${out.xvals.length} × ${out.yvals.length}. Time: ${(t1 - t0).toFixed(0)} ms.`);
-    } catch (e) {
-      setStatus(`Error: ${e.message}`);
-      console.error(e);
+      // plots
+      window.ED_PLOTS.plotMap("plotMap", out.xvals, out.yvals, out.Kd, params.Lb);
+      window.ED_PLOTS.plotCenterline("plotCenter", out.xvals, centerKd);
+      window.ED_PLOTS.plotContour("plotContour", out.xvals, out.yvals, out.Kd, params.Lb, levels);
+
+      status.textContent =
+        `Done. Grid: ${out.xvals.length} × ${out.yvals.length}.`;
+
+    } catch (err) {
+      status.textContent = "Error: " + err.message;
+      console.error(err);
     }
   }
 
   function init() {
-    el("updateBtn").addEventListener("click", update);
-    update();
-    window.addEventListener("resize", () => {
-      // Plotly responsive handles it, but this helps if containers change
-      Plotly.Plots.resize("plotMap");
-      Plotly.Plots.resize("plotCenter");
-      Plotly.Plots.resize("plotContour");
-    });
+    el("updateBtn").addEventListener("click", computeAndPlot);
+    computeAndPlot(); // auto-run once
   }
 
-  window.addEventListener("DOMContentLoaded", init);
+  document.addEventListener("DOMContentLoaded", init);
+
 })();
