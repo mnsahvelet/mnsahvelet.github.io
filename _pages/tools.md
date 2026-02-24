@@ -13,3 +13,4 @@ This page collects the web calculators and small utilities developed for Troy La
 
 ## Wave–Structure Interaction
 - [Diffraction, Semi-infinite Breakwater (Bettes)](/tools/diffraction/bettes/)
+- [Entrance Diffraction Tool (Detached Breakwater, Wiegel Tables)](/tools/entrance-diffraction/)
