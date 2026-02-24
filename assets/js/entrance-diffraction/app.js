@@ -1,6 +1,6 @@
 (() => {
   "use strict";
-
+  console.log("Entrance Diffraction app.js loaded: v1");
   const el = (id) => document.getElementById(id);
 
   function fmt(x, n = 6) {
