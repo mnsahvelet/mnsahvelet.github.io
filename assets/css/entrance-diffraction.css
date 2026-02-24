@@ -39,6 +39,13 @@
   border-radius: 8px;
   border: 1px solid rgba(0,0,0,0.18);
   font-size: 0.95rem;
+
+  color: #111;          /* NEW: make typed numbers black */
+  background: #fff;     /* keep background white */
+}
+
+.ed-row input::placeholder {
+  color: rgba(0,0,0,0.45);   /* optional */
 }
 
 .ed-btnrow { margin-top: 10px; }
