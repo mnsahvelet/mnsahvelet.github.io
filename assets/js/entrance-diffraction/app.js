@@ -54,7 +54,8 @@
 
       // compute Kd grid
       const t0 = performance.now();
-      const out = window.ED_SOLVER.computeKdGrid(p);
+      const out = window.ED_SOLVER.computeKdGrid(params);
+      plotKdMap("kdMapDiv", out.xvals, out.yvals, out.Kd, params.B);
       const t1 = performance.now();
 
       // centerline (loc=0 corresponds to first y row)
