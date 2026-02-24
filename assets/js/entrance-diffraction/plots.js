@@ -11,53 +11,59 @@
     };
   }
 
-function plotKdMap(divId, xvals, yvals, Kd, B) {
-  // Plotly heatmap expects z as [row(y)][col(x)]
-  const data = [{
-    type: "heatmap",
-    x: xvals,
-    y: yvals,
-    z: Kd,
-    zmin: 0,
-    zmax: 1,
-    colorbar: { title: "K\u1D05" }
-  }];
-
-  const layout = {
-    margin: { l: 60, r: 20, t: 30, b: 55 },
-    title: { text: "Diffraction Coefficient K\u1D05" },
-    xaxis: { title: "Distance behind structure, dist (m)" },
-    yaxis: { title: "Position along from left, loc (m)" },
-    shapes: [{
-      type: "line",
-      x0: 0, x1: 0,
-      y0: 0, y1: B,
-      line: { color: "black", width: 4 }
-    }]
-  };
-
-  Plotly.newPlot(divId, data, layout, {responsive:true});
-}
-
-  function plotContour(divId, xvals, yvals, Kd, Lb, levels) {
-    const contour = {
-      type: "contour",
+  function plotMap(divId, xvals, yvals, Kd, Lb) {
+    const data = [{
+      type: "heatmap",
       x: xvals,
       y: yvals,
       z: Kd,
-      contours: levels ? { start: levels[0], end: levels[levels.length-1], size: (levels[1]-levels[0]) } : {},
-      colorbar: { title: "K<sub>d</sub>" },
-      line: { width: 1 }
-    };
+      zmin: 0,
+      zmax: 1,
+      colorbar: { title: "K<sub>d</sub>" }
+    }];
 
     const layout = {
-      margin: { l: 70, r: 20, t: 40, b: 55 },
+      margin: { l: 70, r: 30, t: 40, b: 60 },
+      title: { text: "Diffraction Coefficient K<sub>d</sub>" },
       xaxis: { title: "Distance behind structure, dist (m)" },
       yaxis: { title: "Position along from left, loc (m)" },
       shapes: [ makeBreakwaterOverlay(Lb) ]
     };
 
-    Plotly.newPlot(divId, [contour], layout, {responsive: true});
+    Plotly.newPlot(divId, data, layout, { responsive: true });
+  }
+
+  function plotContour(divId, xvals, yvals, Kd, Lb, levels) {
+    // levels can be null, or an array
+    let contourSpec = {};
+    if (Array.isArray(levels) && levels.length >= 2) {
+      const start = levels[0];
+      const end = levels[levels.length - 1];
+      const size = levels[1] - levels[0];
+      if (isFinite(start) && isFinite(end) && isFinite(size) && size > 0) {
+        contourSpec = { start, end, size };
+      }
+    }
+
+    const data = [{
+      type: "contour",
+      x: xvals,
+      y: yvals,
+      z: Kd,
+      contours: contourSpec,
+      colorbar: { title: "K<sub>d</sub>" },
+      line: { width: 1 }
+    }];
+
+    const layout = {
+      margin: { l: 70, r: 30, t: 40, b: 60 },
+      title: { text: "Diffraction Coefficient K<sub>d</sub> (Contour Map)" },
+      xaxis: { title: "Distance behind structure, dist (m)" },
+      yaxis: { title: "Position along from left, loc (m)" },
+      shapes: [ makeBreakwaterOverlay(Lb) ]
+    };
+
+    Plotly.newPlot(divId, data, layout, { responsive: true });
   }
 
   function plotCenterline(divId, xvals, centerKd) {
@@ -70,12 +76,13 @@ function plotKdMap(divId, xvals, yvals, Kd, B) {
     }];
 
     const layout = {
-      margin: { l: 70, r: 20, t: 40, b: 55 },
+      margin: { l: 70, r: 30, t: 40, b: 60 },
+      title: { text: "Centerline K<sub>d</sub> (loc = 0)" },
       xaxis: { title: "Distance behind structure, dist (m)" },
       yaxis: { title: "K<sub>d</sub> at loc = 0" }
     };
 
-    Plotly.newPlot(divId, data, layout, {responsive: true});
+    Plotly.newPlot(divId, data, layout, { responsive: true });
   }
 
   window.ED_PLOTS = {
