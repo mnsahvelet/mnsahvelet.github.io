@@ -1,16 +1,128 @@
 ---
 layout: single
-title: "Entrance Diffraction Tool"
+title: "Entrance Diffraction Tool (Wiegel Tables)"
 permalink: /tools/entrance-diffraction/
 author_profile: false
 ---
-<script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+
 <link rel="stylesheet" href="/assets/css/entrance-diffraction.css">
 
-<div id="tool-container">
-  <!-- your inputs + plot divs -->
+<div class="ed-wrap">
+
+  <div class="ed-card ed-info">
+    <div class="ed-title">Entrance Diffraction Tool (Detached Breakwater)</div>
+    <div class="ed-sub">
+      Detached breakwater diffraction coefficient <span class="mono">K<sub>d</sub></span> computed by Wiegel (table-based interpolation).
+      Geometry: breakwater lies along <span class="mono">x = 0</span>, from <span class="mono">y = 0</span> to <span class="mono">y = L<sub>b</sub></span>. Lee side is <span class="mono">x &gt; 0</span>.
+      Point location is (<span class="mono">dist = x</span>, <span class="mono">loc = y</span>) with
+      <span class="mono">R = √(x² + y²)</span> and <span class="mono">β = atan2(y, x)</span>.
+    </div>
+    <div class="ed-note">
+      Note: Like your MATLAB version, inputs are clamped to table ranges (<span class="mono">β ∈ [0,180]</span>, <span class="mono">θ₀ ∈ [15,180]</span>).
+    </div>
+  </div>
+
+  <div class="ed-grid">
+
+    <!-- Inputs -->
+    <div class="ed-card ed-inputs">
+      <div class="ed-card-h">Inputs</div>
+
+      <div class="ed-row">
+        <label>T (s)</label>
+        <input id="T" type="number" step="0.1" value="4">
+      </div>
+
+      <div class="ed-row">
+        <label>d (m)</label>
+        <input id="d" type="number" step="0.1" value="30">
+      </div>
+
+      <div class="ed-row">
+        <label>L<sub>b</sub> (m)</label>
+        <input id="Lb" type="number" step="0.1" value="30">
+      </div>
+
+      <div class="ed-row">
+        <label>θ₀ (deg)</label>
+        <input id="theta0" type="number" step="1" value="90">
+      </div>
+
+      <hr class="ed-sep">
+
+      <div class="ed-row">
+        <label>dx = dy (m)</label>
+        <input id="dx" type="number" step="0.1" value="1">
+      </div>
+
+      <div class="ed-row">
+        <label>x max (m)</label>
+        <input id="xMax" type="number" step="1" value="100">
+      </div>
+
+      <div class="ed-row">
+        <label>y max (m)</label>
+        <input id="yMax" type="number" step="1" value="60">
+      </div>
+
+      <div class="ed-row">
+        <label>Contour levels</label>
+        <input id="levels" type="text" value="0:0.05:1">
+      </div>
+
+      <div class="ed-btnrow">
+        <button id="updateBtn" class="ed-btn">Update</button>
+      </div>
+
+      <div class="ed-status" id="status">Ready.</div>
+    </div>
+
+    <!-- Outputs (dispersion) -->
+    <div class="ed-card ed-outputs">
+      <div class="ed-card-h">Dispersion Outputs</div>
+
+      <div class="ed-outrow"><span>ω (rad/s)</span><span class="mono" id="out_omega">–</span></div>
+      <div class="ed-outrow"><span>L (m)</span><span class="mono" id="out_L">–</span></div>
+      <div class="ed-outrow"><span>L₀ (m)</span><span class="mono" id="out_L0">–</span></div>
+      <div class="ed-outrow"><span>k (1/m)</span><span class="mono" id="out_k">–</span></div>
+      <div class="ed-outrow"><span>k₀ (1/m)</span><span class="mono" id="out_k0">–</span></div>
+      <div class="ed-outrow"><span>kh (–)</span><span class="mono" id="out_kh">–</span></div>
+
+      <hr class="ed-sep">
+
+      <div class="ed-small">
+        Computation uses linear dispersion relation and Wiegel tables for <span class="mono">K<sub>d</sub></span>.
+      </div>
+    </div>
+
+    <!-- Plots -->
+    <div class="ed-card ed-plots">
+      <div class="ed-card-h">Plots</div>
+
+      <div class="ed-plotblock">
+        <div class="ed-plot-title">Map: K<sub>d</sub>(dist, loc)</div>
+        <div id="plotMap" class="ed-plot"></div>
+      </div>
+
+      <div class="ed-plotblock">
+        <div class="ed-plot-title">Centerline: loc = 0</div>
+        <div id="plotCenter" class="ed-plot"></div>
+      </div>
+
+      <div class="ed-plotblock">
+        <div class="ed-plot-title">Contour Map</div>
+        <div id="plotContour" class="ed-plot"></div>
+      </div>
+
+    </div>
+
+  </div>
 </div>
 
+<!-- Plotly -->
+<script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+
+<!-- Tool JS -->
 <script src="/assets/js/entrance-diffraction/tables_wiegel.js"></script>
 <script src="/assets/js/entrance-diffraction/solver.js"></script>
 <script src="/assets/js/entrance-diffraction/plots.js"></script>
