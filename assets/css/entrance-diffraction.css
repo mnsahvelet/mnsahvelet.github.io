@@ -46,7 +46,25 @@
   color: #111;          /* NEW: make typed numbers black */
   background: #fff;     /* keep background white */
 }
+/* Labels next to inputs */
+.ed-row label,
+.ed-row .ed-label {
+  color: #111 !important;     /* was inheriting white */
+  font-weight: 600;
+}
 
+/* Any helper text inside your white cards */
+.ed-card,
+.ed-card p,
+.ed-card small {
+  color: #111;
+}
+
+/* Inputs (already fixed numbers, keep it explicit) */
+.ed-row input {
+  color: #111;
+  background: #fff;
+}
 .ed-row input::placeholder {
   color: rgba(0,0,0,0.45);   /* optional */
 }
