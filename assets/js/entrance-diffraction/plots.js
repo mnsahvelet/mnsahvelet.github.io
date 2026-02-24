@@ -2,7 +2,6 @@
   "use strict";
 
   function makeBreakwaterOverlay(Lb) {
-    // breakwater along x=0 from y=0..Lb
     return {
       type: "line",
       x0: 0, x1: 0,
@@ -11,7 +10,7 @@
     };
   }
 
-  function plotMap(divId, xvals, yvals, Kd, Lb) {
+  function plotKdMap(divId, xvals, yvals, Kd, Lb) {
     const data = [{
       type: "heatmap",
       x: xvals,
@@ -19,30 +18,30 @@
       z: Kd,
       zmin: 0,
       zmax: 1,
-      colorbar: { title: "K<sub>d</sub>" }
+      colorbar: { title: "K\u2091" } // Kd
     }];
 
     const layout = {
-      margin: { l: 70, r: 30, t: 40, b: 60 },
-      title: { text: "Diffraction Coefficient K<sub>d</sub>" },
+      margin: { l: 70, r: 25, t: 40, b: 60 },
+      title: { text: "Diffraction Coefficient K\u2091" },
       xaxis: { title: "Distance behind structure, dist (m)" },
       yaxis: { title: "Position along from left, loc (m)" },
       shapes: [ makeBreakwaterOverlay(Lb) ]
     };
 
-    Plotly.newPlot(divId, data, layout, { responsive: true });
+    Plotly.newPlot(divId, data, layout, { responsive: true, displayModeBar: false });
   }
 
   function plotContour(divId, xvals, yvals, Kd, Lb, levels) {
-    // levels can be null, or an array
-    let contourSpec = {};
-    if (Array.isArray(levels) && levels.length >= 2) {
-      const start = levels[0];
-      const end = levels[levels.length - 1];
-      const size = levels[1] - levels[0];
-      if (isFinite(start) && isFinite(end) && isFinite(size) && size > 0) {
-        contourSpec = { start, end, size };
-      }
+    let contours = {};
+    if (levels && levels.length >= 2) {
+      contours = {
+        start: levels[0],
+        end: levels[levels.length - 1],
+        size: (levels[1] - levels[0]),
+        showlabels: true,
+        labelfont: { size: 10, color: "black" }
+      };
     }
 
     const data = [{
@@ -50,20 +49,22 @@
       x: xvals,
       y: yvals,
       z: Kd,
-      contours: contourSpec,
-      colorbar: { title: "K<sub>d</sub>" },
-      line: { width: 1 }
+      contours,
+      line: { width: 1, color: "black" },
+      colorbar: { title: "K\u2091" },
+      zmin: 0,
+      zmax: 1
     }];
 
     const layout = {
-      margin: { l: 70, r: 30, t: 40, b: 60 },
-      title: { text: "Diffraction Coefficient K<sub>d</sub> (Contour Map)" },
+      margin: { l: 70, r: 25, t: 40, b: 60 },
+      title: { text: "Diffraction Coefficient K\u2091 (Contour Map)" },
       xaxis: { title: "Distance behind structure, dist (m)" },
       yaxis: { title: "Position along from left, loc (m)" },
       shapes: [ makeBreakwaterOverlay(Lb) ]
     };
 
-    Plotly.newPlot(divId, data, layout, { responsive: true });
+    Plotly.newPlot(divId, data, layout, { responsive: true, displayModeBar: false });
   }
 
   function plotCenterline(divId, xvals, centerKd) {
@@ -76,17 +77,19 @@
     }];
 
     const layout = {
-      margin: { l: 70, r: 30, t: 40, b: 60 },
-      title: { text: "Centerline K<sub>d</sub> (loc = 0)" },
+      margin: { l: 70, r: 25, t: 40, b: 60 },
+      title: { text: "Centerline K\u2091 (loc = 0)" },
       xaxis: { title: "Distance behind structure, dist (m)" },
-      yaxis: { title: "K<sub>d</sub> at loc = 0" }
+      yaxis: { title: "K\u2091 at loc = 0" },
+      yaxis2: {}
     };
 
-    Plotly.newPlot(divId, data, layout, { responsive: true });
+    Plotly.newPlot(divId, data, layout, { responsive: true, displayModeBar: false });
   }
 
+  // ✅ Export the correct names (THIS was the main bug)
   window.ED_PLOTS = {
-    plotMap,
+    plotMap: plotKdMap,
     plotContour,
     plotCenterline
   };
