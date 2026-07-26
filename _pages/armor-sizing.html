@@ -1,0 +1,375 @@
+---
+title: "Armour Stone Sizing (Hudson & Van der Meer)"
+permalink: /tools/armor-sizing/
+layout: none
+---
+{% raw %}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Armour Stone Sizing (Hudson &amp; Van der Meer) — M. N. Sahvelet</title>
+<style>
+:root{--navy:#12324a;--teal:#1c7293;--line:#d3e0e7;--ink:#1a2a36;--mut:#5d7079;--accent:#2e6ca4;--bg:#fff;--card:#f7fafc;
+--green:#2e8b57;--orange:#d08b1e;--red:#c0392b;--stone:#9a8c78;--stoned:#6d6152;}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.5}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+header{background:var(--navy);color:#fff;padding:18px 22px}
+header .row{max-width:1080px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:baseline;gap:14px;justify-content:space-between}
+header h1{margin:0;font-size:22px;font-weight:700}
+header .sub{color:#9fd0da;font-size:13px}
+header nav a{color:#cfe4ea;font-size:13px;margin-left:14px}
+.wrap{max-width:1080px;margin:0 auto;padding:20px 22px 60px}
+.intro{color:var(--mut);font-size:14px;margin:6px 0 18px}
+.grid{display:grid;grid-template-columns:300px 1fr;gap:22px}
+@media(max-width:820px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+.panel h2{margin:0 0 12px;font-size:15px;color:var(--navy);letter-spacing:.02em;text-transform:uppercase}
+label{display:block;font-size:13px;color:var(--mut);margin:10px 0 3px}
+input[type=number],select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:7px;font-size:15px;background:#fff}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hint{font-size:11.5px;color:var(--mut);margin-top:3px}
+.res{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;margin-top:4px}
+.res .k{font-size:12px;color:var(--mut)}
+.res .v{font-size:17px;font-weight:600;color:var(--ink)}
+.res .v small{font-weight:400;color:var(--mut);font-size:12px}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;color:#fff;background:var(--teal)}
+.gov{margin-top:2px;padding:14px 16px;border-radius:10px;background:#fff;border:1px solid var(--line);border-left:6px solid var(--green)}
+.gov .lab{font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:.03em}
+.gov .name{font-size:24px;font-weight:700;color:var(--navy);margin:2px 0}
+.gov .name small{font-size:14px;font-weight:400;color:var(--mut)}
+.gov .why{font-size:13px;color:var(--mut)}
+.btn{display:inline-block;margin-top:16px;width:100%;padding:10px 16px;border:0;border-radius:8px;background:var(--navy);color:#fff;font-size:14px;font-weight:600;cursor:pointer}
+.btn:hover{background:#1c4a6b}
+.cardrow{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+@media(max-width:680px){.cardrow{grid-template-columns:1fr}}
+.plotcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.plotcard.full{grid-column:1/-1}
+.plotcard h3{margin:0 0 6px;font-size:13px;color:var(--navy)}
+canvas{width:100%;display:block;background:#fff;border-radius:8px;border:1px solid var(--line)}
+.note{font-size:12px;color:var(--mut);margin-top:8px}
+.eqn{background:#eef5f8;border-left:3px solid var(--teal);padding:8px 12px;border-radius:6px;font-size:12.5px;color:var(--navy);margin:14px 0;font-family:"Cambria Math",Georgia,serif}
+footer{border-top:1px solid var(--line);color:var(--mut);font-size:12.5px;padding:16px 22px;text-align:center}
+</style>
+</head>
+<body>
+<header><div class="row">
+  <div><h1>Armour Stone Sizing</h1>
+       <div class="sub">Hudson (SPM 1984) &amp; Van der Meer (1988) &middot; rubble-mound armour unit sizing</div></div>
+  <nav><a href="/tools/">&larr; Tools</a><a href="/files/armor-sizing-theory.pdf">📄 Theory (PDF)</a></nav>
+</div></header>
+
+<div class="wrap">
+  <p class="intro">Size the primary armour of a rubble-mound breakwater or revetment. The tool applies the Hudson
+  stability formula (with a stability coefficient K<sub>D</sub> for the armour type) and, for rock armour, the Van der
+  Meer (1988) formulae with notional permeability, damage level and storm duration. It returns the median mass and
+  nominal diameter, and reports the governing (larger) design. See the
+  <a href="/files/armor-sizing-theory.pdf">theory note</a> for equations and a worked example.</p>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>Inputs</h2>
+      <label>Design wave height, H<sub>s</sub> (m)</label>
+      <input id="Hs" type="number" value="3" step="0.1" min="0.2">
+      <label>Peak period, T<sub>p</sub> (s)</label>
+      <input id="Tp" type="number" value="8" step="0.5" min="1">
+      <label>Structure slope, cot&alpha;</label>
+      <input id="cota" type="number" value="2" step="0.25" min="1">
+      <label>Armour unit type (sets K<sub>D</sub>)</label>
+      <select id="armor">
+        <option value="rough">Rough angular quarrystone (2 layers)</option>
+        <option value="smooth">Smooth rounded quarrystone (2 layers)</option>
+        <option value="cube">Modified cube — concrete (2 layers)</option>
+        <option value="tetra">Tetrapod — concrete (2 layers)</option>
+        <option value="dolos">Dolos — concrete (2 layers)</option>
+        <option value="accropode">Accropode — concrete (1 layer)</option>
+      </select>
+      <label>Wave condition at structure</label>
+      <select id="cond">
+        <option value="nb">Non-breaking</option>
+        <option value="b">Breaking</option>
+      </select>
+      <div class="two">
+        <div><label>Armour &rho;<sub>r</sub> (kg/m³)</label><input id="rr" type="number" value="2650" step="10" min="1500"></div>
+        <div><label>Water &rho;<sub>w</sub> (kg/m³)</label><input id="rw" type="number" value="1025" step="5" min="900"></div>
+      </div>
+      <div style="border-top:1px solid var(--line);margin:14px 0 4px"></div>
+      <div class="hint" style="margin-bottom:4px">Van der Meer (rock armour):</div>
+      <label>Notional permeability, P</label>
+      <select id="P">
+        <option value="0.1">0.1 — impermeable core</option>
+        <option value="0.4" selected>0.4 — permeable core</option>
+        <option value="0.5">0.5 — homogeneous</option>
+        <option value="0.6">0.6 — no core (permeable)</option>
+      </select>
+      <div class="two">
+        <div><label>Damage, S</label><input id="S" type="number" value="2" step="1" min="1"></div>
+        <div><label>No. of waves, N</label><input id="N" type="number" value="3000" step="500" min="500"></div>
+      </div>
+      <div class="hint">S = 2 start of damage · 3–5 intermediate · 8+ failure.</div>
+      <button class="btn" id="rep">⬇ Download report (PDF)</button>
+    </div>
+
+    <div>
+      <div class="cardrow" style="margin-top:0">
+        <div class="panel">
+          <h2>Hudson (SPM 1984)</h2>
+          <div class="res">
+            <div><div class="k">Stability coeff., K<sub>D</sub></div><div class="v"><span id="KD">–</span></div></div>
+            <div><div class="k">Relative density, &Delta;</div><div class="v"><span id="Delta">–</span></div></div>
+            <div><div class="k">Median mass, M<sub>50</sub></div><div class="v"><span id="Mh">–</span> <small>t</small></div></div>
+            <div><div class="k">Weight, W</div><div class="v"><span id="Wh">–</span> <small>kN</small></div></div>
+            <div><div class="k">Nominal dia., D<sub>n50</sub></div><div class="v"><span id="Dnh">–</span> <small>m</small></div></div>
+            <div><div class="k">Layer thickness, t<sub>a</sub></div><div class="v"><span id="ta">–</span> <small>m</small></div></div>
+          </div>
+          <div class="note">Units per 100 m²: <b><span id="na">–</span></b>. Layers: <span id="nlay">–</span>.</div>
+        </div>
+        <div class="panel">
+          <h2>Van der Meer (1988) &nbsp; <span id="reg" class="badge">—</span></h2>
+          <div class="res">
+            <div><div class="k">Iribarren, &xi;<sub>m</sub></div><div class="v"><span id="xim">–</span></div></div>
+            <div><div class="k">Transition, &xi;<sub>cr</sub></div><div class="v"><span id="xicr">–</span></div></div>
+            <div><div class="k">Stability no., N<sub>s</sub></div><div class="v"><span id="Ns">–</span></div></div>
+            <div><div class="k">Nominal dia., D<sub>n50</sub></div><div class="v"><span id="Dnv">–</span> <small>m</small></div></div>
+            <div><div class="k">Median mass, M<sub>50</sub></div><div class="v"><span id="Mv">–</span> <small>t</small></div></div>
+            <div><div class="k">Applies to</div><div class="v" style="font-size:13px"><span id="vapp">rock</span></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:16px">
+        <h2>Governing design</h2>
+        <div class="gov" id="gov">
+          <div class="lab">Recommended median armour</div>
+          <div class="name"><span id="gM">–</span> <small>t &nbsp;·&nbsp; D<sub>n50</sub> = <span id="gD">–</span> m</small></div>
+          <div class="why" id="gwhy">–</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cardrow">
+    <div class="plotcard full"><h3>Rubble-mound cross-section (armour shown to scale)</h3>
+      <canvas id="cv1" width="1020" height="320"></canvas>
+      <div class="note" id="note1"></div></div>
+    <div class="plotcard"><h3>Van der Meer stability: N<sub>s</sub> vs Iribarren &xi;<sub>m</sub></h3>
+      <canvas id="cv2" width="500" height="260"></canvas>
+      <div class="note">Plunging &amp; surging branches (meeting at &xi;<sub>cr</sub>); dashed line = Hudson N<sub>s</sub>. Lower N<sub>s</sub> ⇒ larger stone. The dot is your case.</div></div>
+    <div class="plotcard"><h3>Median mass: Hudson vs Van der Meer</h3>
+      <canvas id="cv3" width="500" height="260"></canvas>
+      <div class="note">The larger of the two governs the rock-armour design.</div></div>
+  </div>
+
+  <div class="eqn">Hudson:&nbsp; M<sub>50</sub> = &rho;<sub>r</sub>H³ / (K<sub>D</sub>&middot;&Delta;³&middot;cot&alpha;),&nbsp; &Delta; = &rho;<sub>r</sub>/&rho;<sub>w</sub> &minus; 1.&nbsp;&nbsp;
+     Van der Meer (plunging):&nbsp; H<sub>s</sub>/(&Delta;D<sub>n50</sub>) = 6.2&middot;P<sup>0.18</sup>(S/&radic;N)<sup>0.2</sup>&middot;&xi;<sub>m</sub><sup>&minus;0.5</sup>.</div>
+</div>
+
+<footer>Armour Stone Sizing calculator · Muhammed N. Sahvelet, Troy Lab, Purdue University ·
+  Hudson (SPM 1984) &amp; Van der Meer (1988). See the <a href="/files/armor-sizing-theory.pdf">theory note</a> for details and references.</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+const TAU=2*Math.PI, G=9.81;
+const $=id=>document.getElementById(id);
+const fmt=(x,d)=>isFinite(x)?x.toFixed(d):"–";
+const ARMOR={
+ rough:{name:"Rough angular quarrystone",kdb:2.0,kdn:4.0,kl:1.15,n:2,rock:true,nv:0.37},
+ smooth:{name:"Smooth rounded quarrystone",kdb:1.2,kdn:2.4,kl:1.02,n:2,rock:true,nv:0.38},
+ cube:{name:"Modified cube (concrete)",kdb:6.5,kdn:7.5,kl:1.10,n:2,rock:false,nv:0.47},
+ tetra:{name:"Tetrapod (concrete)",kdb:7.0,kdn:8.0,kl:1.04,n:2,rock:false,nv:0.50},
+ dolos:{name:"Dolos (concrete)",kdb:15.8,kdn:31.8,kl:0.94,n:2,rock:false,nv:0.56},
+ accropode:{name:"Accropode (concrete)",kdb:12.0,kdn:15.0,kl:1.51,n:1,rock:false,nv:0.50}
+};
+
+function compute(){
+  const Hs=+$("Hs").value,Tp=+$("Tp").value,cota=+$("cota").value,rr=+$("rr").value,rw=+$("rw").value;
+  const a=ARMOR[$("armor").value], cond=$("cond").value, KD=cond=="b"?a.kdb:a.kdn;
+  const P=+$("P").value, S=+$("S").value, N=+$("N").value;
+  const D=rr/rw-1;
+  // Hudson
+  const Mh=rr*Math.pow(Hs,3)/(KD*Math.pow(D,3)*cota);   // kg
+  const Dnh=Math.pow(Mh/rr,1/3);
+  const ta=a.n*a.kl*Dnh, na=100*a.n*a.kl*(1-a.nv)/(Dnh*Dnh), Wh=Mh*G/1000;
+  // Van der Meer
+  const tana=1/cota, Tm=Tp/1.15, sm=TAU*Hs/(G*Tm*Tm), xim=tana/Math.sqrt(sm);
+  const xicr=Math.pow(6.2*Math.pow(P,0.31)*Math.sqrt(tana),1/(P+0.5));
+  const NsP=6.2*Math.pow(P,0.18)*Math.pow(S/Math.sqrt(N),0.2)*Math.pow(xim,-0.5);
+  const NsS=1.0*Math.pow(P,-0.13)*Math.pow(S/Math.sqrt(N),0.2)*Math.sqrt(cota)*Math.pow(xim,P);
+  const reg = xim<xicr?"Plunging":"Surging", Ns = xim<xicr?NsP:NsS;
+  const Dnv=Hs/(D*Ns), Mv=rr*Math.pow(Dnv,3);
+  return {Hs,Tp,cota,rr,rw,a,cond,KD,P,S,N,D,Mh,Dnh,ta,na,Wh,tana,Tm,sm,xim,xicr,NsP,NsS,reg,Ns,Dnv,Mv,
+          NsH:Math.pow(KD*cota,1/3)};
+}
+
+// ---- cross-section ----
+function drawMound(R){
+  const cv=$("cv1"),ctx=cv.getContext("2d"),W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);ctx.fillStyle="#fff";ctx.fillRect(0,0,W,H);
+  const mL=20,mR=20,mT=16,mB=24,pw=W-mL-mR,ph=H-mT-mB;
+  const cota=R.cota, Dn=Math.max(R.Mh>R.Mv?R.Dnh:R.Dnv, R.Dnh, R.Dnv), ta=2*R.a.kl*Dn;
+  const Vtop=R.Hs*1.05, Vbot=R.Hs*1.35, Ht=Vtop+Vbot;          // mound height (m)
+  const cw=Math.max(3*Dn, 0.6*R.Hs), cotl=1.5;                 // crest width, landward slope
+  const Wm=cota*Ht + cw + cotl*Ht;                            // mound width (m)
+  const ppm=Math.min(ph/Ht, (pw*0.72)/Wm);                    // isotropic px per metre
+  const bottomY=mT+ph, swlY=bottomY-Vbot*ppm;
+  const xToe=mL+pw*0.26;
+  const C1={x:xToe+cota*Ht*ppm, y:mT+ph-Ht*ppm}, C2={x:0,y:0};
+  C2.x=C1.x+cw*ppm; C2.y=C1.y;
+  const LT={x:C2.x+cotl*Ht*ppm, y:bottomY};
+  // sea (left) + wave
+  ctx.fillStyle="#dcebf3";ctx.beginPath();ctx.moveTo(mL,swlY);ctx.lineTo(xToe,swlY);ctx.lineTo(xToe,bottomY);ctx.lineTo(mL,bottomY);ctx.closePath();ctx.fill();
+  ctx.strokeStyle="#4a90c2";ctx.lineWidth=1.6;ctx.beginPath();
+  for(let x=mL;x<=xToe;x+=3){const t=(x-mL)/(xToe-mL);const y=swlY-(R.Hs*0.4*ppm)*Math.sin(t*TAU*1.7)*(0.4+0.6*t);x==mL?ctx.moveTo(x,y):ctx.lineTo(x,y);}
+  ctx.stroke();
+  // core (grey trapezoid)
+  ctx.fillStyle="#cbd3d8";ctx.strokeStyle="#aeb9c0";ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(xToe,bottomY);ctx.lineTo(C1.x,C1.y);ctx.lineTo(C2.x,C2.y);ctx.lineTo(LT.x,LT.y);ctx.closePath();ctx.fill();ctx.stroke();
+  // armour band along seaward face + crest (thick stroke)
+  ctx.strokeStyle="#9a8c78";ctx.lineCap="round";ctx.lineJoin="round";ctx.lineWidth=Math.max(ta*ppm,6);
+  ctx.beginPath();ctx.moveTo(xToe,bottomY);ctx.lineTo(C1.x,C1.y);ctx.lineTo(C2.x,C2.y);ctx.stroke();
+  ctx.lineWidth=1;
+  // individual stones along seaward face (radius Dn/2)
+  const rpx=Math.max(Dn/2*ppm,3), n=Math.max(3,Math.floor((Math.hypot(C1.x-xToe,C1.y-bottomY))/(rpx*1.9)));
+  ctx.fillStyle="#8a7c66";ctx.strokeStyle="#5f5545";
+  for(let i=0;i<=n;i++){const t=i/n;const x=xToe+(C1.x-xToe)*t, y=bottomY+(C1.y-bottomY)*t;
+    ctx.beginPath();ctx.arc(x,y,rpx,0,TAU);ctx.fill();ctx.stroke();}
+  // SWL
+  ctx.strokeStyle="#2e6ca4";ctx.setLineDash([6,4]);ctx.lineWidth=1.3;ctx.beginPath();ctx.moveTo(mL,swlY);ctx.lineTo(LT.x,swlY);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle="#2e6ca4";ctx.font="11px Segoe UI,Arial";ctx.textAlign="left";ctx.fillText("SWL",mL+2,swlY-4);
+  // Dn50 scale bar (bottom-right)
+  const sbx=LT.x-10-Dn*ppm, sby=bottomY+0;
+  ctx.strokeStyle="#5f5545";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(sbx,mT+12);ctx.lineTo(sbx+Dn*ppm,mT+12);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(sbx,mT+8);ctx.lineTo(sbx,mT+16);ctx.moveTo(sbx+Dn*ppm,mT+8);ctx.lineTo(sbx+Dn*ppm,mT+16);ctx.stroke();
+  ctx.fillStyle="#5f5545";ctx.textAlign="center";ctx.fillText("Dn50 = "+fmt(Dn,2)+" m",sbx+Dn*ppm/2,mT+6);
+  // labels
+  ctx.fillStyle="#6d6152";ctx.textAlign="left";ctx.fillText("armour",(xToe+C1.x)/2-6,(bottomY+C1.y)/2-ta*ppm/2-4);
+  ctx.fillStyle="#8a99a3";ctx.fillText("core / underlayer",(C1.x+LT.x)/2-30,(C1.y+bottomY)/2+8);
+  ctx.fillStyle="#5d7079";ctx.textAlign="right";ctx.fillText("slope 1 : "+fmt(cota,2),C1.x-8,C1.y-6);
+}
+
+// ---- stability curve ----
+function drawStab(R){
+  const cv=$("cv2"),ctx=cv.getContext("2d"),W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);ctx.fillStyle="#fff";ctx.fillRect(0,0,W,H);
+  const mL=42,mR=14,mT=14,mB=32,pw=W-mL-mR,ph=H-mT-mB;
+  const x0=0.6,x1=6,y0=0.6,y1=3.2;
+  const PX=x=>mL+(x-x0)/(x1-x0)*pw, PY=y=>mT+ph-(y-y0)/(y1-y0)*ph;
+  ctx.font="10px Segoe UI,Arial";ctx.fillStyle="#5d7079";
+  for(let v=1;v<=6;v++){const x=PX(v);ctx.strokeStyle="#eef2f5";ctx.beginPath();ctx.moveTo(x,mT);ctx.lineTo(x,mT+ph);ctx.stroke();ctx.textAlign="center";ctx.fillText(v,x,mT+ph+14);}
+  for(let v=1;v<=3;v++){const y=PY(v);ctx.strokeStyle="#eef2f5";ctx.beginPath();ctx.moveTo(mL,y);ctx.lineTo(mL+pw,y);ctx.stroke();ctx.textAlign="right";ctx.fillText(v,mL-5,y+3);}
+  ctx.strokeStyle="#8aa1ad";ctx.strokeRect(mL,mT,pw,ph);
+  const P=R.P,S=R.S,N=R.N,cota=R.cota;
+  const NsP=x=>6.2*Math.pow(P,0.18)*Math.pow(S/Math.sqrt(N),0.2)*Math.pow(x,-0.5);
+  const NsS=x=>1.0*Math.pow(P,-0.13)*Math.pow(S/Math.sqrt(N),0.2)*Math.sqrt(cota)*Math.pow(x,P);
+  // plunging (x<xicr) then surging
+  ctx.strokeStyle="#2e6ca4";ctx.lineWidth=2.2;ctx.beginPath();let st=false;
+  for(let x=x0;x<=R.xicr&&x<=x1;x+=0.03){const y=NsP(x);const yy=Math.min(Math.max(y,y0),y1);st?ctx.lineTo(PX(x),PY(yy)):ctx.moveTo(PX(x),PY(yy));st=true;}
+  ctx.stroke();
+  ctx.strokeStyle="#2e8b57";ctx.lineWidth=2.2;ctx.beginPath();st=false;
+  for(let x=Math.max(R.xicr,x0);x<=x1;x+=0.03){const y=NsS(x);const yy=Math.min(Math.max(y,y0),y1);st?ctx.lineTo(PX(x),PY(yy)):ctx.moveTo(PX(x),PY(yy));st=true;}
+  ctx.stroke();
+  // xicr marker
+  if(R.xicr>=x0&&R.xicr<=x1){ctx.strokeStyle="#c9d4da";ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(PX(R.xicr),mT);ctx.lineTo(PX(R.xicr),mT+ph);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle="#8a99a3";ctx.textAlign="center";ctx.fillText("ξcr",PX(R.xicr),mT+ph-4);}
+  // Hudson Ns line
+  const yH=Math.min(Math.max(R.NsH,y0),y1);ctx.strokeStyle="#d08b1e";ctx.setLineDash([5,4]);ctx.lineWidth=1.6;
+  ctx.beginPath();ctx.moveTo(mL,PY(yH));ctx.lineTo(mL+pw,PY(yH));ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle="#b06a12";ctx.textAlign="left";ctx.fillText("Hudson Ns",mL+4,PY(yH)-3);
+  // design point
+  const px=PX(Math.min(Math.max(R.xim,x0),x1)),py=PY(Math.min(Math.max(R.Ns,y0),y1));
+  ctx.fillStyle="#12324a";ctx.beginPath();ctx.arc(px,py,5,0,TAU);ctx.fill();ctx.strokeStyle="#fff";ctx.lineWidth=1.4;ctx.stroke();
+  ctx.fillStyle="#12324a";ctx.font="12px Segoe UI,Arial";ctx.textAlign="center";ctx.fillText("Iribarren ξm",mL+pw/2,H-8);
+  ctx.save();ctx.translate(12,mT+ph/2);ctx.rotate(-Math.PI/2);ctx.fillText("stability Ns",0,0);ctx.restore();
+}
+
+// ---- comparison bars ----
+function drawBars(R){
+  const cv=$("cv3"),ctx=cv.getContext("2d"),W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);ctx.fillStyle="#fff";ctx.fillRect(0,0,W,H);
+  const mL=44,mR=16,mT=18,mB=40,pw=W-mL-mR,ph=H-mT-mB;
+  const Mh=R.Mh/1000, Mv=R.Mv/1000, gov=Math.max(Mh, R.a.rock?Mv:0);
+  const vals=[["Hudson",Mh,"#2e6ca4"],["Van der Meer",R.a.rock?Mv:NaN,"#2e8b57"],["Governing",gov,"#12324a"]];
+  const mx=Math.max(Mh,R.a.rock?Mv:0,gov)*1.2||1;
+  ctx.strokeStyle="#eef2f5";
+  for(let i=0;i<=4;i++){const v=mx*i/4,y=mT+ph-v/mx*ph;ctx.beginPath();ctx.moveTo(mL,y);ctx.lineTo(mL+pw,y);ctx.stroke();
+    ctx.fillStyle="#5d7079";ctx.font="10px Segoe UI,Arial";ctx.textAlign="right";ctx.fillText(v.toFixed(1),mL-5,y+3);}
+  ctx.strokeStyle="#8aa1ad";ctx.strokeRect(mL,mT,pw,ph);
+  const bw=pw/vals.length*0.5;
+  vals.forEach((v,i)=>{const cx=mL+pw*(i+0.5)/vals.length;
+    if(isFinite(v[1])){const h=v[1]/mx*ph,y=mT+ph-h;ctx.fillStyle=v[2];ctx.fillRect(cx-bw/2,y,bw,h);
+      ctx.fillStyle="#12324a";ctx.font="bold 12px Segoe UI,Arial";ctx.textAlign="center";ctx.fillText(v[1].toFixed(2),cx,y-5);}
+    else{ctx.fillStyle="#9aa7ae";ctx.font="10px Segoe UI,Arial";ctx.textAlign="center";ctx.fillText("(rock only)",cx,mT+ph-6);}
+    ctx.fillStyle="#5d7079";ctx.font="11px Segoe UI,Arial";ctx.textAlign="center";ctx.fillText(v[0],cx,mT+ph+15);});
+  ctx.save();ctx.translate(12,mT+ph/2);ctx.rotate(-Math.PI/2);ctx.fillStyle="#12324a";ctx.font="12px Segoe UI,Arial";ctx.textAlign="center";ctx.fillText("M50 (tonnes)",0,0);ctx.restore();
+}
+
+let LAST=null;
+function update(){
+  const R=compute(); if(!(R.Hs>0&&R.Tp>0&&R.cota>=1&&R.D>0))return; LAST=R;
+  $("KD").textContent=fmt(R.KD,1);$("Delta").textContent=fmt(R.D,3);
+  $("Mh").textContent=fmt(R.Mh/1000,2);$("Wh").textContent=fmt(R.Wh,1);
+  $("Dnh").textContent=fmt(R.Dnh,2);$("ta").textContent=fmt(R.ta,2);
+  $("na").textContent=fmt(R.na,1);$("nlay").textContent=R.a.n;
+  $("xim").textContent=fmt(R.xim,2);$("xicr").textContent=fmt(R.xicr,2);
+  $("Ns").textContent=fmt(R.Ns,2);$("Dnv").textContent=fmt(R.Dnv,2);$("Mv").textContent=fmt(R.Mv/1000,2);
+  $("reg").textContent=R.reg;
+  $("vapp").textContent = R.a.rock?"this rock armour":"rock only (info)";
+  $("vapp").style.color = R.a.rock?"var(--ink)":"var(--mut)";
+  // governing
+  const useV=R.a.rock, Mg=useV?Math.max(R.Mh,R.Mv):R.Mh;
+  const govV = useV && R.Mv>=R.Mh;
+  const Dg = govV?R.Dnv:R.Dnh;
+  $("gM").textContent=fmt(Mg/1000,2);$("gD").textContent=fmt(Dg,2);
+  $("gwhy").textContent = useV
+    ? (govV?"Van der Meer governs (larger than Hudson) for this rock armour, damage S="+R.S+" and "+R.N+" waves."
+          :"Hudson governs (larger than Van der Meer) for this case.")
+    : "Concrete units: Hudson governs (Van der Meer is for rock armour and shown for reference only).";
+  const gc = (useV&&govV)?"#2e8b57":"#2e6ca4"; $("gov").style.borderLeftColor=gc; $("gM").style.color=gc;
+  $("note1").innerHTML="Brown band = primary armour layer (thickness t<sub>a</sub> ≈ 2·k<sub>Δ</sub>·D<sub>n50</sub>); circles are single units at D<sub>n50</sub> scale; grey = core/underlayer.";
+  drawMound(R);drawStab(R);drawBars(R);
+}
+["Hs","Tp","cota","armor","cond","rr","rw","P","S","N"].forEach(id=>$(id).addEventListener("input",update));
+
+$("rep").addEventListener("click",()=>{
+  if(!LAST)update(); const R=LAST;
+  const J=window.jspdf&&window.jspdf.jsPDF; if(!J){window.print();return;}
+  const doc=new J({unit:"pt",format:"a4"}),P=40; let y=48;
+  doc.setFont("helvetica","bold");doc.setFontSize(16);doc.setTextColor(18,50,74);
+  doc.text("Armour Stone Sizing — Report",P,y);y+=18;
+  doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(90,112,121);
+  doc.text("Hudson (SPM 1984) & Van der Meer (1988) · M. N. Sahvelet, Troy Lab, Purdue University",P,y);y+=20;
+  doc.setDrawColor(210,224,231);doc.line(P,y,555,y);y+=18;
+  doc.setFontSize(11);doc.setTextColor(26,42,54);doc.setFont("helvetica","bold");doc.text("Inputs",P,y);y+=15;
+  doc.setFont("helvetica","normal");doc.setFontSize(10);
+  [["Design wave height, Hs",R.Hs.toFixed(2)+" m"],["Peak period, Tp",R.Tp.toFixed(2)+" s"],["Slope, cot a",R.cota.toFixed(2)],
+   ["Armour type",R.a.name+(R.cond=="b"?", breaking":", non-breaking")],["Stability coeff. KD",R.KD.toFixed(1)],
+   ["Densities",R.rr+" / "+R.rw+" kg/m3 (Delta="+R.D.toFixed(3)+")"],["VdM  P / S / N",R.P+" / "+R.S+" / "+R.N]]
+   .forEach(r=>{doc.text(r[0],P,y);doc.text(String(r[1]),250,y);y+=14;});
+  y+=6;doc.setFont("helvetica","bold");doc.setFontSize(11);doc.text("Results",P,y);y+=15;doc.setFont("helvetica","normal");doc.setFontSize(10);
+  [["Hudson  M50",(R.Mh/1000).toFixed(2)+" t   (Dn50="+R.Dnh.toFixed(2)+" m, W="+R.Wh.toFixed(1)+" kN)"],
+   ["Armour layer thickness / units","ta="+R.ta.toFixed(2)+" m,  "+R.na.toFixed(1)+" per 100 m2"],
+   ["Van der Meer  regime","xi_m="+R.xim.toFixed(2)+", xi_cr="+R.xicr.toFixed(2)+"  ("+R.reg+")"],
+   ["Van der Meer  Ns / M50","Ns="+R.Ns.toFixed(2)+",  M50="+(R.Mv/1000).toFixed(2)+" t (Dn50="+R.Dnv.toFixed(2)+" m)"]]
+   .forEach(r=>{doc.text(r[0],P,y);doc.text(String(r[1]),250,y);y+=14;});
+  const useV=R.a.rock,govV=useV&&R.Mv>=R.Mh,Mg=useV?Math.max(R.Mh,R.Mv):R.Mh,Dg=govV?R.Dnv:R.Dnh;
+  y+=6;doc.setFillColor(247,250,252);doc.setDrawColor(210,224,231);doc.roundedRect(P,y,515,40,5,5,"FD");
+  doc.setFont("helvetica","bold");doc.setFontSize(9);doc.setTextColor(90,112,121);doc.text("GOVERNING DESIGN",P+12,y+15);
+  doc.setFontSize(13);doc.setTextColor(18,80,60);doc.text("M50 = "+(Mg/1000).toFixed(2)+" t   (Dn50 = "+Dg.toFixed(2)+" m)  —  "+(useV?(govV?"Van der Meer":"Hudson"):"Hudson"),P+12,y+31);y+=54;
+  try{const i1=$("cv1").toDataURL("image/png"),w=515,h=w*320/1020;if(y+h>805){doc.addPage();y=48;}doc.addImage(i1,"PNG",P,y,w,h);y+=h+10;}catch(e){}
+  try{const i2=$("cv2").toDataURL("image/png"),w=250,h=w*260/500;const i3=$("cv3").toDataURL("image/png");
+    if(y+h>805){doc.addPage();y=48;}doc.addImage(i2,"PNG",P,y,w,h);doc.addImage(i3,"PNG",P+265,y,w,h);y+=h+10;}catch(e){}
+  if(y>780){doc.addPage();y=48;}
+  doc.setFontSize(7.5);doc.setTextColor(120,130,138);
+  doc.text(doc.splitTextToSize("Hudson: M50 = rho_r H^3 / (KD Delta^3 cot a). Van der Meer (1988) plunging/surging with notional "
+   +"permeability P, damage S and N waves. Refs: USACE SPM (1984); Van der Meer (1988); CIRIA/CUR Rock Manual (2007); Coastal Engineering Manual (2002).",515),P,y);
+  doc.save("armor-sizing-report.pdf");
+});
+
+update();
+window.addEventListener("resize",()=>{if(LAST){drawMound(LAST);drawStab(LAST);drawBars(LAST);}});
+</script>
+</body>
+</html>
+
+{% endraw %}
