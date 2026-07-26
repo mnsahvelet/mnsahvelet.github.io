@@ -13,5 +13,6 @@ This page collects the web calculators and small utilities developed for Troy La
 
 ## Wave–Structure Interaction
 - [Wave Run-up & Overtopping (EurOtop, 2018)](/tools/runup-overtopping/)
+- [Armour Stone Sizing (Hudson & Van der Meer)](/tools/armor-sizing/)
 - [Diffraction, Semi-infinite Breakwater (Bettes)](/tools/diffraction/bettes/)
 - [Entrance Diffraction Tool (Detached Breakwater, Wiegel Tables)](/tools/entrance-diffraction/)
