@@ -1,154 +1,246 @@
 ---
-layout: single
-title: "Wave Dispersion Calculator"
+title: "Wave Dispersion & Transformation"
 permalink: /tools/dispersion/
-author_profile: false
+layout: none
 ---
-
-<p>
-Enter wave period <strong>T</strong> and water depth <strong>h</strong>. Outputs are based on the linear dispersion relation:
-<span style="white-space:nowrap;">ω² = g k tanh(kh)</span>.
-</p>
-
+{% raw %}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wave Dispersion &amp; Transformation — M. N. Sahvelet</title>
 <style>
-#dispersion-tool input[type="number"]{
-  color: #000 !important;
-  background: #fff !important;
-  border: 1px solid #cfcfcf !important;
-  padding: 10px !important;
-  border-radius: 6px !important;
-  width: 100% !important;
-  max-width: 520px !important;
-  font-size: 16px !important;
-}
-#dispersion-tool label{
-  display:block;
-  margin: 10px 0 6px 0;
-  font-weight: 600;
-}
-#dispersion-tool button{
-  margin-top: 14px;
-  padding: 10px 16px;
-  border-radius: 6px;
-  border: 1px solid #cfcfcf;
-  cursor: pointer;
-}
-#dispersion-out{
-  max-width: 720px;
-  margin-top: 18px;
-  padding: 14px 16px;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.10);
-  border-radius: 10px;
-}
-#dispersion-out .err{ color: #ffb3b3; }
-#dispersion-out .ok  { color: #eaeaea; }
-#dispersion-out table{
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-}
-#dispersion-out td{
-  padding: 6px 8px;
-  border-bottom: 1px solid rgba(255,255,255,0.10);
-}
-#dispersion-out td:first-child{
-  width: 35%;
-  opacity: 0.95;
-}
+:root{--navy:#12324a;--teal:#1c7293;--line:#d3e0e7;--ink:#1a2a36;--mut:#5d7079;--accent:#2e6ca4;--bg:#fff;--card:#f7fafc;}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.5}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+header{background:var(--navy);color:#fff;padding:18px 22px}
+header .row{max-width:1080px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:baseline;gap:14px;justify-content:space-between}
+header h1{margin:0;font-size:22px;font-weight:700}
+header .sub{color:#9fd0da;font-size:13px}
+header nav a{color:#cfe4ea;font-size:13px;margin-left:14px}
+.wrap{max-width:1080px;margin:0 auto;padding:20px 22px 60px}
+.intro{color:var(--mut);font-size:14px;margin:6px 0 18px}
+.grid{display:grid;grid-template-columns:300px 1fr;gap:22px}
+@media(max-width:820px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+.panel h2{margin:0 0 12px;font-size:15px;color:var(--navy);letter-spacing:.02em;text-transform:uppercase}
+label{display:block;font-size:13px;color:var(--mut);margin:10px 0 3px}
+input[type=number]{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:7px;font-size:15px}
+.hint{font-size:11.5px;color:var(--mut);margin-top:3px}
+.res{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;margin-top:4px}
+.res .k{font-size:12px;color:var(--mut)}
+.res .v{font-size:17px;font-weight:600;color:var(--ink)}
+.res .v small{font-weight:400;color:var(--mut);font-size:12px}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;color:#fff;background:var(--teal)}
+.cardrow{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+@media(max-width:680px){.cardrow{grid-template-columns:1fr}}
+.plotcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.plotcard h3{margin:0 0 6px;font-size:13px;color:var(--navy)}
+canvas{width:100%;display:block;background:#fff;border-radius:8px;border:1px solid var(--line)}
+.full{grid-column:1/-1}
+.note{font-size:12px;color:var(--mut);margin-top:8px}
+.eqn{background:#eef5f8;border-left:3px solid var(--teal);padding:8px 12px;border-radius:6px;font-size:13px;color:var(--navy);margin:14px 0;font-family:"Cambria Math",Georgia,serif}
+footer{border-top:1px solid var(--line);color:var(--mut);font-size:12.5px;padding:16px 22px;text-align:center}
 </style>
+</head>
+<body>
+<header><div class="row">
+  <div><h1>Wave Dispersion &amp; Transformation</h1>
+       <div class="sub">Linear (Airy) wave theory · dispersion, shoaling and refraction</div></div>
+  <nav><a href="/tools/">&larr; Tools</a><a href="/files/dispersion-theory.pdf">📄 Theory (PDF)</a></nav>
+</div></header>
 
-<div id="dispersion-tool">
-  <label for="T">Wave period T (s)</label>
-  <input id="T" type="number" step="0.01" value="0">
+<div class="wrap">
+  <p class="intro">Enter the wave period and the local water depth to solve the linear dispersion relation, then a
+  deep-water height and approach angle to obtain the shoaled and refracted wave. Everything updates as you type.
+  See the <a href="/files/dispersion-theory.pdf">theory note</a> for the equations and a worked example.</p>
 
-  <label for="h">Water depth h (m)</label>
-  <input id="h" type="number" step="0.01" value="0">
+  <div class="grid">
+    <div class="panel">
+      <h2>Inputs</h2>
+      <label>Wave period, T (s)</label>
+      <input id="T" type="number" value="10" step="0.5" min="0.5">
+      <label>Local water depth, d (m)</label>
+      <input id="d" type="number" value="8" step="0.5" min="0.1">
+      <div style="border-top:1px solid var(--line);margin:14px 0 4px"></div>
+      <div class="hint" style="margin-bottom:6px">For wave transformation (deep&nbsp;water &rarr; depth&nbsp;d):</div>
+      <label>Deep-water wave height, H0 (m)</label>
+      <input id="H0" type="number" value="2" step="0.1" min="0">
+      <label>Deep-water approach angle, alpha0 (deg)</label>
+      <input id="a0" type="number" value="25" step="1" min="0" max="89">
+      <div class="hint">alpha0 measured from the shore-normal (0 = head-on).</div>
+    </div>
 
- <button type="button" onclick="computeDispersion()">Compute</button>
-
-
-  <div id="dispersion-out">
-    <div class="ok">Results will appear here after you click <strong>Compute</strong>.</div>
+    <div>
+      <div class="panel">
+        <h2>Dispersion at depth d &nbsp; <span id="regime" class="badge">—</span></h2>
+        <div class="res">
+          <div><div class="k">Wavelength, L</div><div class="v"><span id="L">–</span> <small>m</small></div></div>
+          <div><div class="k">Deep-water length, L0</div><div class="v"><span id="L0">–</span> <small>m</small></div></div>
+          <div><div class="k">Wavenumber, k = 2&pi;/L</div><div class="v"><span id="k">–</span> <small>1/m</small></div></div>
+          <div><div class="k">Relative depth, d/L</div><div class="v"><span id="dL">–</span></div></div>
+          <div><div class="k">Phase speed, c = L/T</div><div class="v"><span id="c">–</span> <small>m/s</small></div></div>
+          <div><div class="k">Group speed, cg = n&middot;c</div><div class="v"><span id="cg">–</span> <small>m/s</small></div></div>
+          <div><div class="k">Ratio n = cg/c</div><div class="v"><span id="n">–</span></div></div>
+          <div><div class="k">kd</div><div class="v"><span id="kd">–</span></div></div>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:16px">
+        <h2>Transformation (deep water &rarr; depth d)</h2>
+        <div class="res">
+          <div><div class="k">Shoaling coefficient, Ks</div><div class="v"><span id="Ks">–</span></div></div>
+          <div><div class="k">Refraction coefficient, Kr</div><div class="v"><span id="Kr">–</span></div></div>
+          <div><div class="k">Local wave angle, alpha</div><div class="v"><span id="a">–</span> <small>deg</small></div></div>
+          <div><div class="k">Height ratio, H/H0</div><div class="v"><span id="HH0">–</span></div></div>
+          <div><div class="k">Local wave height, H</div><div class="v"><span id="H">–</span> <small>m</small></div></div>
+          <div><div class="k">Deep-water steepness, H0/L0</div><div class="v"><span id="st">–</span></div></div>
+        </div>
+      </div>
+    </div>
   </div>
+
+  <div class="cardrow">
+    <div class="plotcard"><h3>Wave in the water column (to scale)</h3>
+      <canvas id="cv1" width="500" height="230"></canvas>
+      <div class="note" id="note1"></div></div>
+    <div class="plotcard"><h3>Shoaling &amp; refraction vs relative depth d/L0</h3>
+      <canvas id="cv2" width="500" height="230"></canvas>
+      <div class="note">Curves for the current T and alpha0; the dashed line marks your depth.</div></div>
+    <div class="plotcard full"><h3>Wave speed and group speed vs relative depth d/L0</h3>
+      <canvas id="cv3" width="1020" height="230"></canvas>
+      <div class="note">c/c0 and cg/c0 show how the wave slows and how energy transport changes from deep to shallow water.</div></div>
+  </div>
+
+  <div class="eqn">&omega;&sup2; = g&middot;k&middot;tanh(k&middot;d),&nbsp;&nbsp; &omega; = 2&pi;/T,&nbsp; k = 2&pi;/L,&nbsp;&nbsp;
+     n = &frac12;[1 + 2kd/sinh(2kd)],&nbsp;&nbsp; Ks = &radic;(cg0/cg),&nbsp;&nbsp;
+     sin&alpha; = (c/c0)&middot;sin&alpha;0,&nbsp; Kr = &radic;(cos&alpha;0/cos&alpha;),&nbsp;&nbsp; H = H0&middot;Ks&middot;Kr.</div>
 </div>
+
+<footer>Wave Dispersion &amp; Transformation calculator · Muhammed N. Sahvelet, Troy Lab, Purdue University ·
+  linear Airy theory. See the <a href="/files/dispersion-theory.pdf">theory note</a> for details and references.</footer>
+
 <script>
-window.computeDispersion = function () {
+const g=9.81, TAU=2*Math.PI;
+const $=id=>document.getElementById(id);
+function dispersion(T,d){
+  const L0=g*T*T/TAU; let L=L0;
+  for(let i=0;i<300;i++){const Ln=L0*Math.tanh(TAU*d/L); if(Math.abs(Ln-L)<1e-10){L=Ln;break;} L=Ln;}
+  const k=TAU/L, kd=k*d, c=L/T, n=0.5*(1+2*kd/Math.sinh(2*kd)), cg=n*c;
+  return {L0,L,k,kd,c,cg,n};
+}
+function transform(T,d,H0,a0deg){
+  const D=dispersion(T,d);
+  const c0=g*T/TAU, cg0=0.5*c0;
+  const Ks=Math.sqrt(cg0/D.cg);
+  const a0=a0deg*Math.PI/180;
+  const sina=Math.min(1,(D.c/c0)*Math.sin(a0));
+  const a=Math.asin(sina);
+  const Kr=Math.sqrt(Math.max(Math.cos(a0),1e-9)/Math.max(Math.cos(a),1e-9));
+  const HH0=Ks*Kr, H=H0*HH0;
+  return Object.assign({},D,{c0,cg0,Ks,Kr,a:a*180/Math.PI,HH0,H});
+}
+function regime(dL){ if(dL>0.5)return["Deep water","#12324a"]; if(dL<0.05)return["Shallow water","#c77d38"]; return["Intermediate","#1c7293"]; }
+function fmt(x,p){ p=(p===undefined?3:p); if(!isFinite(x))return"–"; const a=Math.abs(x); if(a!==0&&(a<0.01||a>=1e5))return x.toExponential(2); return x.toFixed(p); }
 
-  const g = 9.81;
+function axes(ctx,W,H,pad,xr,yr,xlab,ylab){
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle="#c9d6dd"; ctx.fillStyle="#5d7079"; ctx.lineWidth=1; ctx.font="10px sans-serif";
+  ctx.beginPath();ctx.moveTo(pad.l,pad.t);ctx.lineTo(pad.l,H-pad.b);ctx.lineTo(W-pad.r,H-pad.b);ctx.stroke();
+  const px=v=>pad.l+(v-xr[0])/(xr[1]-xr[0])*(W-pad.l-pad.r);
+  const py=v=>H-pad.b-(v-yr[0])/(yr[1]-yr[0])*(H-pad.t-pad.b);
+  for(let i=0;i<=5;i++){const xv=xr[0]+i*(xr[1]-xr[0])/5;
+    ctx.strokeStyle="#eef3f6";ctx.beginPath();ctx.moveTo(px(xv),pad.t);ctx.lineTo(px(xv),H-pad.b);ctx.stroke();
+    ctx.fillStyle="#5d7079";ctx.fillText(fmt(xv,2),px(xv)-8,H-pad.b+12);}
+  for(let i=0;i<=4;i++){const yv=yr[0]+i*(yr[1]-yr[0])/4;
+    ctx.strokeStyle="#eef3f6";ctx.beginPath();ctx.moveTo(pad.l,py(yv));ctx.lineTo(W-pad.r,py(yv));ctx.stroke();
+    ctx.fillStyle="#5d7079";ctx.fillText(fmt(yv,2),4,py(yv)+3);}
+  ctx.fillStyle="#5d7079"; ctx.fillText(xlab,W-pad.r-ctx.measureText(xlab).width,H-2);
+  ctx.save();ctx.translate(11,pad.t+6);ctx.rotate(-Math.PI/2);ctx.fillText(ylab,0,0);ctx.restore();
+  return {px,py};
+}
+function curve(ctx,map,xs,ys,col){ctx.strokeStyle=col;ctx.lineWidth=2;ctx.beginPath();
+  xs.forEach((x,i)=>{const X=map.px(x),Y=map.py(ys[i]); i?ctx.lineTo(X,Y):ctx.moveTo(X,Y);});ctx.stroke();}
+function legend(ctx,items,x,y){ctx.font="11px sans-serif";items.forEach((it,i)=>{const yy=y+i*15;
+  ctx.strokeStyle=it.c;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,yy);ctx.lineTo(x+16,yy);ctx.stroke();
+  ctx.fillStyle="#333";ctx.fillText(it.t,x+21,yy+3);});}
 
-  const T = parseFloat(document.getElementById("T").value);
-  const h = parseFloat(document.getElementById("h").value);
-  const out = document.getElementById("dispersion-out");
-
-  if (!(T > 0) || !(h > 0)) {
-    out.innerHTML = "<div class='err'><strong>Error:</strong> Please enter positive values for T and h.</div>";
-    return;
-  }
-
-  const omega = 2 * Math.PI / T;
-  const k0 = (omega * omega) / g;
-
-  function f(k){
-    return omega*omega - g*k*Math.tanh(k*h);
-  }
-
-  let klo = Math.max(1e-6, 0.1*k0);
-  let khi = 10*k0 + 1e-6;
-
-  let flo = f(klo);
-  let fhi = f(khi);
-
-  let expand = 0;
-  while (flo*fhi > 0 && expand < 30) {
-    khi *= 2.0;
-    fhi = f(khi);
-    expand++;
-  }
-
-  if (flo*fhi > 0) {
-    out.innerHTML = "<div class='err'><strong>Error:</strong> Could not bracket solution.</div>";
-    return;
-  }
-
-  let k;
-  for (let i=0; i<120; i++){
-    k = 0.5*(klo + khi);
-    const fk = f(k);
-
-    if (Math.abs(fk) < 1e-12) break;
-
-    if (flo*fk < 0) {
-      khi = k;
-      fhi = fk;
-    } else {
-      klo = k;
-      flo = fk;
-    }
-  }
-
-  const L  = 2*Math.PI / k;
-  const c  = omega / k;
-
-  const kh = k*h;
-  const n  = 0.5 * (1 + (2*kh)/Math.sinh(2*kh));
-  const cg = n*c;
-
-  let regime = "Intermediate depth";
-  if (kh < 0.5) regime = "Shallow water";
-  if (kh > 3.0) regime = "Deep water";
-
-  out.innerHTML = `
-    <div class="ok"><strong>Results</strong></div>
-    <table>
-      <tr><td>ω (rad/s)</td><td>${omega.toFixed(6)}</td></tr>
-      <tr><td>k (1/m)</td><td>${k.toFixed(10)}</td></tr>
-      <tr><td>L (m)</td><td>${L.toFixed(4)}</td></tr>
-      <tr><td>c (m/s)</td><td>${c.toFixed(4)}</td></tr>
-      <tr><td>c<sub>g</sub> (m/s)</td><td>${cg.toFixed(4)}</td></tr>
-      <tr><td>kh (-)</td><td>${kh.toFixed(4)} — ${regime}</td></tr>
-    </table>
-  `;
-};
+function drawColumn(T,d){
+  const cv=$("cv1"),ctx=cv.getContext("2d"),W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  const D=dispersion(T,d), dL=d/D.L, rg=regime(dL);
+  const nWave=1.6, mLeft=54, mRight=16, plotW=W-mLeft-mRight;
+  const pxPerM=plotW/(nWave*D.L);
+  const swl=48, seabedY=swl+Math.min(d*pxPerM, H-swl-26);
+  ctx.fillStyle="#dff0f5"; ctx.fillRect(mLeft,swl,plotW,seabedY-swl);
+  ctx.fillStyle="#c9a06a"; ctx.fillRect(mLeft,seabedY,plotW,H-seabedY);
+  ctx.strokeStyle="#a07c46";ctx.beginPath();ctx.moveTo(mLeft,seabedY);ctx.lineTo(mLeft+plotW,seabedY);ctx.stroke();
+  ctx.strokeStyle="#9fb9c4";ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(mLeft,swl);ctx.lineTo(mLeft+plotW,swl);ctx.stroke();ctx.setLineDash([]);
+  const amp=14; ctx.strokeStyle="#12324a";ctx.lineWidth=2;ctx.beginPath();
+  for(let i=0;i<=plotW;i++){const x=i/pxPerM; const y=swl-amp*Math.cos(TAU*x/D.L); i?ctx.lineTo(mLeft+i,y):ctx.moveTo(mLeft+i,y);}
+  ctx.stroke();
+  const rr=Math.tanh(TAU*d/D.L);
+  ctx.strokeStyle="#1c7293";ctx.lineWidth=1;
+  [0.5,1.1].forEach(f=>{const cx=mLeft+(f*D.L)*pxPerM; if(cx>mLeft+plotW-16||cx<mLeft+16)return;
+    [0.28,0.6].forEach(fd=>{const cy=swl+(seabedY-swl)*fd;
+      ctx.beginPath();ctx.ellipse(cx,cy,9,9*rr,0,0,TAU);ctx.stroke();});});
+  const y0=swl-amp-12, x1=mLeft, x2=mLeft+D.L*pxPerM;
+  ctx.strokeStyle="#12324a";ctx.fillStyle="#12324a";ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(x1,y0);ctx.lineTo(x2,y0);ctx.stroke();
+  [[x1,1],[x2,-1]].forEach(a=>{ctx.beginPath();ctx.moveTo(a[0],y0);ctx.lineTo(a[0]+a[1]*5,y0-3);ctx.lineTo(a[0]+a[1]*5,y0+3);ctx.fill();});
+  ctx.font="11px sans-serif";ctx.fillText("L = "+fmt(D.L,1)+" m",(x1+x2)/2-24,y0-4);
+  ctx.beginPath();ctx.moveTo(mLeft-12,swl);ctx.lineTo(mLeft-12,seabedY);ctx.stroke();
+  [[swl,1],[seabedY,-1]].forEach(a=>{ctx.beginPath();ctx.moveTo(mLeft-12,a[0]);ctx.lineTo(mLeft-15,a[0]+a[1]*5);ctx.lineTo(mLeft-9,a[0]+a[1]*5);ctx.fill();});
+  ctx.save();ctx.translate(mLeft-18,(swl+seabedY)/2);ctx.rotate(-Math.PI/2);ctx.fillText("d = "+fmt(d,1)+" m",-18,0);ctx.restore();
+  $("note1").innerHTML="Relative depth d/L = <b>"+fmt(dL,3)+"</b> &rarr; <b style='color:"+rg[1]+"'>"+rg[0]+
+    "</b>. Orbital paths are near-circular in deep water and flatten toward the bed in shallow water.";
+}
+function drawShoal(T,a0){
+  const cv=$("cv2"),ctx=cv.getContext("2d"),W=cv.width,H=cv.height;
+  const xr=[0.004,0.5], yr=[0,1.6];
+  const map=axes(ctx,W,H,{l:34,r:12,t:12,b:22},xr,yr,"d/L0","coeff.");
+  const L0=g*T*T/TAU, N=120, xs=[],ks=[],kr=[],hh=[];
+  for(let i=0;i<=N;i++){const dL0=xr[0]+i*(xr[1]-xr[0])/N; const d=dL0*L0; const t=transform(T,d,1,a0);
+    xs.push(dL0);ks.push(t.Ks);kr.push(t.Kr);hh.push(t.HH0);}
+  curve(ctx,map,xs,ks,"#1c7293"); curve(ctx,map,xs,kr,"#c77d38"); curve(ctx,map,xs,hh,"#12324a");
+  legend(ctx,[{t:"Ks (shoaling)",c:"#1c7293"},{t:"Kr (refraction)",c:"#c77d38"},{t:"H/H0",c:"#12324a"}],W-148,20);
+  return map;
+}
+function drawSpeed(T){
+  const cv=$("cv3"),ctx=cv.getContext("2d"),W=cv.width,H=cv.height;
+  const xr=[0.004,0.6], yr=[0,1.05];
+  const map=axes(ctx,W,H,{l:40,r:14,t:12,b:22},xr,yr,"d/L0","c/c0 , cg/c0");
+  const L0=g*T*T/TAU, c0=g*T/TAU, N=140, xs=[],cc=[],cgc=[];
+  for(let i=0;i<=N;i++){const dL0=xr[0]+i*(xr[1]-xr[0])/N; const d=dL0*L0; const D=dispersion(T,d);
+    xs.push(dL0);cc.push(D.c/c0);cgc.push(D.cg/c0);}
+  curve(ctx,map,xs,cc,"#12324a"); curve(ctx,map,xs,cgc,"#1c7293");
+  legend(ctx,[{t:"c/c0 (phase)",c:"#12324a"},{t:"cg/c0 (group)",c:"#1c7293"}],W-160,20);
+  return map;
+}
+function vmark(cvid,map,dL0){const cv=$(cvid),c=cv.getContext("2d");const X=map.px(dL0);
+  c.strokeStyle="#c0392b";c.setLineDash([5,4]);c.lineWidth=1.3;
+  c.beginPath();c.moveTo(X,12);c.lineTo(X,cv.height-22);c.stroke();c.setLineDash([]);
+  c.fillStyle="#c0392b";c.font="10px sans-serif";c.fillText("your case",Math.min(X+3,cv.width-52),20);}
+function compute(){
+  const T=+$("T").value||10, d=+$("d").value||1, H0=+$("H0").value||0, a0=+$("a0").value||0;
+  const t=transform(T,d,H0,a0), dL=d/t.L, rg=regime(dL);
+  $("L").textContent=fmt(t.L,2); $("L0").textContent=fmt(t.L0,2);
+  $("k").textContent=fmt(t.k,4); $("dL").textContent=fmt(dL,3);
+  $("c").textContent=fmt(t.c,2); $("cg").textContent=fmt(t.cg,2);
+  $("n").textContent=fmt(t.n,3); $("kd").textContent=fmt(t.kd,3);
+  const rb=$("regime"); rb.textContent=rg[0]; rb.style.background=rg[1];
+  $("Ks").textContent=fmt(t.Ks,3); $("Kr").textContent=fmt(t.Kr,3);
+  $("a").textContent=fmt(t.a,1); $("HH0").textContent=fmt(t.HH0,3);
+  $("H").textContent=fmt(t.H,2); $("st").textContent=fmt(H0/t.L0,4);
+  drawColumn(T,d);
+  const m2=drawShoal(T,a0), m3=drawSpeed(T), dL0=d/t.L0;
+  vmark("cv2",m2,dL0); vmark("cv3",m3,dL0);
+}
+["T","d","H0","a0"].forEach(id=>$(id).addEventListener("input",compute));
+compute();
 </script>
+</body>
+</html>
 
+{% endraw %}
