@@ -15,3 +15,6 @@ This page collects the web calculators and small utilities developed for Troy La
 - [Wave Run-up & Overtopping (EurOtop, 2018)](/tools/runup-overtopping/)
 - [Armour Stone Sizing (Hudson & Van der Meer)](/tools/armor-sizing/)
 - [Diffraction App (Detached Breakwater & Entrance, TLCDAT)](https://tlcdat-coastal.streamlit.app/)
+
+## Wave Prediction
+- [Wind-Wave Prediction (SPM 1984)](/tools/wind-wave/)
