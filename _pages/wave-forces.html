@@ -1,0 +1,449 @@
+---
+title: "Wave Forces on Structures (Goda & Morison)"
+permalink: /tools/wave-forces/
+layout: none
+---
+{% raw %}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wave Forces — Goda &amp; Morison — M. N. Sahvelet</title>
+<style>
+:root{--navy:#12324a;--teal:#1c7293;--line:#d3e0e7;--ink:#1a2a36;--mut:#5d7079;--accent:#2e6ca4;--bg:#fff;--card:#f7fafc;
+--green:#2e8b57;--orange:#d08b1e;--red:#c0392b;}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.5}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+header{background:var(--navy);color:#fff;padding:18px 22px}
+header .row{max-width:1080px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:baseline;gap:14px;justify-content:space-between}
+header h1{margin:0;font-size:22px;font-weight:700}
+header .sub{color:#9fd0da;font-size:13px}
+header nav a{color:#cfe4ea;font-size:13px;margin-left:14px}
+.wrap{max-width:1080px;margin:0 auto;padding:20px 22px 60px}
+.intro{color:var(--mut);font-size:14px;margin:6px 0 14px}
+.modes{display:flex;gap:8px;margin:0 0 18px}
+.modes button{flex:1;padding:10px;border:1px solid var(--line);background:#fff;border-radius:8px;font-size:14px;font-weight:600;color:var(--mut);cursor:pointer}
+.modes button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.grid{display:grid;grid-template-columns:300px 1fr;gap:22px}
+@media(max-width:820px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+.panel h2{margin:0 0 12px;font-size:15px;color:var(--navy);letter-spacing:.02em;text-transform:uppercase}
+label{display:block;font-size:13px;color:var(--mut);margin:10px 0 3px}
+input[type=number]{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:7px;font-size:15px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hint{font-size:11.5px;color:var(--mut);margin-top:3px}
+.res{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;margin-top:4px}
+.res .k{font-size:12px;color:var(--mut)}
+.res .v{font-size:17px;font-weight:600;color:var(--ink)}
+.res .v small{font-weight:400;color:var(--mut);font-size:12px}
+.big{margin-top:2px;padding:14px 16px;border-radius:10px;background:#fff;border:1px solid var(--line);border-left:6px solid var(--teal)}
+.big .lab{font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:.03em}
+.big .num{font-size:24px;font-weight:700;color:var(--navy)}
+.big .num small{font-size:13px;font-weight:400;color:var(--mut)}
+.btn{display:inline-block;margin-top:16px;width:100%;padding:10px 16px;border:0;border-radius:8px;background:var(--navy);color:#fff;font-size:14px;font-weight:600;cursor:pointer}
+.btn:hover{background:#1c4a6b}
+.cardrow{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+@media(max-width:680px){.cardrow{grid-template-columns:1fr}}
+.plotcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.plotcard.full{grid-column:1/-1}
+.plotcard h3{margin:0 0 6px;font-size:13px;color:var(--navy)}
+canvas{width:100%;display:block;background:#fff;border-radius:8px;border:1px solid var(--line)}
+.note{font-size:12px;color:var(--mut);margin-top:8px}
+.eqn{background:#eef5f8;border-left:3px solid var(--teal);padding:8px 12px;border-radius:6px;font-size:12.5px;color:var(--navy);margin:14px 0;font-family:"Cambria Math",Georgia,serif}
+.hide{display:none}
+footer{border-top:1px solid var(--line);color:var(--mut);font-size:12.5px;padding:16px 22px;text-align:center}
+</style>
+</head>
+<body>
+<header><div class="row">
+  <div><h1>Wave Forces on Structures</h1>
+       <div class="sub">Goda (vertical wall / caisson) &amp; Morison (slender pile)</div></div>
+  <nav><a href="/tools/">&larr; Tools</a><a href="/files/wave-forces-theory.pdf">📄 Theory (PDF)</a></nav>
+</div></header>
+
+<div class="wrap">
+  <p class="intro">Two standard wave-force methods in one tool. <b>Goda</b> gives the wave-pressure distribution and
+  horizontal force / uplift on a vertical wall or caisson breakwater; <b>Morison</b> gives the drag + inertia force on
+  a slender vertical pile. See the <a href="/files/wave-forces-theory.pdf">theory note</a> for equations and worked examples.</p>
+
+  <div class="modes">
+    <button id="mGoda" class="on">Vertical wall (Goda)</button>
+    <button id="mMor">Slender pile (Morison)</button>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>Inputs</h2>
+      <!-- GODA -->
+      <div id="inGoda">
+        <label>Significant wave height, H<sub>s</sub> (m)</label>
+        <input id="gHs" type="number" value="3" step="0.1" min="0.2">
+        <label>Wave period, T (s)</label>
+        <input id="gT" type="number" value="10" step="0.5" min="1">
+        <label>Water depth at wall, h (m)</label>
+        <input id="gh" type="number" value="10" step="0.5" min="1">
+        <div class="two">
+          <div><label>Berm depth, d (m)</label><input id="gd" type="number" value="10" step="0.5" min="0.5"></div>
+          <div><label>Crest above SWL, h<sub>c</sub> (m)</label><input id="ghc" type="number" value="5" step="0.5" min="0"></div>
+        </div>
+        <div class="two">
+          <div><label>Wave angle, &beta; (deg)</label><input id="gb" type="number" value="0" step="5" min="0" max="80"></div>
+          <div><label>Base width, B (m)</label><input id="gB" type="number" value="8" step="0.5" min="1"></div>
+        </div>
+        <div class="hint">Design wave H<sub>max</sub> = min(1.8·H<sub>s</sub>, 0.78·h). d = h means no rubble berm.</div>
+      </div>
+      <!-- MORISON -->
+      <div id="inMor" class="hide">
+        <label>Wave height, H (m)</label>
+        <input id="mH" type="number" value="3" step="0.1" min="0.1">
+        <label>Wave period, T (s)</label>
+        <input id="mT" type="number" value="8" step="0.5" min="1">
+        <label>Water depth, h (m)</label>
+        <input id="mh" type="number" value="10" step="0.5" min="1">
+        <label>Pile diameter, D (m)</label>
+        <input id="mD" type="number" value="1.0" step="0.1" min="0.05">
+        <div class="two">
+          <div><label>Drag coeff., C<sub>d</sub></label><input id="mCd" type="number" value="1.0" step="0.05" min="0.2"></div>
+          <div><label>Inertia coeff., C<sub>m</sub></label><input id="mCm" type="number" value="2.0" step="0.05" min="1"></div>
+        </div>
+        <div class="hint">Slender pile: D/L &lt; ~0.2 (Morison valid). Typical C<sub>d</sub>≈0.7–1.2, C<sub>m</sub>≈1.5–2.0.</div>
+      </div>
+      <button class="btn" id="rep">⬇ Download report (PDF)</button>
+    </div>
+
+    <div>
+      <!-- GODA results -->
+      <div id="resGoda">
+        <div class="panel">
+          <h2>Horizontal force &amp; uplift</h2>
+          <div class="big"><div style="flex:1"><div class="lab">Horizontal force, P</div><div class="num"><span id="gP">–</span> <small>kN/m</small></div></div>
+            <div style="flex:1"><div class="lab">Uplift, U</div><div class="num"><span id="gU">–</span> <small>kN/m</small></div></div>
+            <div style="flex:1"><div class="lab">Overturning M</div><div class="num"><span id="gM">–</span> <small>kN·m/m</small></div></div></div>
+          <div class="res" style="margin-top:14px">
+            <div><div class="k">Design height, H<sub>max</sub></div><div class="v"><span id="gHmax">–</span> <small>m</small></div></div>
+            <div><div class="k">Pressure elevation, &eta;*</div><div class="v"><span id="geta">–</span> <small>m</small></div></div>
+            <div><div class="k">p₁ (at SWL)</div><div class="v"><span id="gp1">–</span> <small>kPa</small></div></div>
+            <div><div class="k">p₃ (at wall base)</div><div class="v"><span id="gp3">–</span> <small>kPa</small></div></div>
+            <div><div class="k">p₄ (at crest)</div><div class="v"><span id="gp4">–</span> <small>kPa</small></div></div>
+            <div><div class="k">p<sub>u</sub> (uplift, at toe)</div><div class="v"><span id="gpu">–</span> <small>kPa</small></div></div>
+            <div><div class="k">&alpha;₁, &alpha;₂, &alpha;₃</div><div class="v" style="font-size:14px"><span id="galpha">–</span></div></div>
+            <div><div class="k">Wavelength, L</div><div class="v"><span id="gL">–</span> <small>m</small></div></div>
+          </div>
+        </div>
+      </div>
+      <!-- MORISON results -->
+      <div id="resMor" class="hide">
+        <div class="panel">
+          <h2>Pile force &nbsp; <span id="mDom" class="badge" style="background:var(--teal);color:#fff;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600">—</span></h2>
+          <div class="big"><div style="flex:1"><div class="lab">Max total force, F<sub>max</sub></div><div class="num"><span id="mF">–</span> <small>kN</small></div></div>
+            <div style="flex:1"><div class="lab">Max moment (base)</div><div class="num"><span id="mMo">–</span> <small>kN·m</small></div></div></div>
+          <div class="res" style="margin-top:14px">
+            <div><div class="k">Max drag force, F<sub>D</sub></div><div class="v"><span id="mFD">–</span> <small>kN</small></div></div>
+            <div><div class="k">Max inertia force, F<sub>I</sub></div><div class="v"><span id="mFI">–</span> <small>kN</small></div></div>
+            <div><div class="k">Surface velocity, u<sub>max</sub></div><div class="v"><span id="mu">–</span> <small>m/s</small></div></div>
+            <div><div class="k">Keulegan-Carpenter, KC</div><div class="v"><span id="mKC">–</span></div></div>
+            <div><div class="k">Wavelength, L</div><div class="v"><span id="mL">–</span> <small>m</small></div></div>
+            <div><div class="k">Diameter ratio, D/L</div><div class="v"><span id="mDL">–</span></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:16px"><div class="note" id="expl" style="margin:0;font-size:13px"></div></div>
+    </div>
+  </div>
+
+  <div class="cardrow">
+    <div class="plotcard full"><h3 id="t1">—</h3><canvas id="cv1" width="1020" height="300"></canvas>
+      <div class="note" id="note1"></div></div>
+    <div class="plotcard"><h3 id="t2">—</h3><canvas id="cv2" width="500" height="250"></canvas>
+      <div class="note" id="note2"></div></div>
+    <div class="plotcard"><h3 id="t3">—</h3><canvas id="cv3" width="500" height="250"></canvas>
+      <div class="note" id="note3"></div></div>
+  </div>
+
+  <div class="eqn" id="eqn"></div>
+</div>
+
+<footer>Wave Forces calculator · Muhammed N. Sahvelet, Troy Lab, Purdue University ·
+  Goda (2000) &amp; Morison et al. (1950). See the <a href="/files/wave-forces-theory.pdf">theory note</a> for details and references.</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+const G=9.81, TAU=2*Math.PI, RHO_G=9810;
+const $=id=>document.getElementById(id);
+const fmt=(x,d)=>isFinite(x)?x.toFixed(d):"–";
+function disp(T,d){let L0=G*T*T/TAU,L=L0;for(let i=0;i<200;i++){const Ln=L0*Math.tanh(TAU*d/L);if(Math.abs(Ln-L)<1e-9){L=Ln;break;}L=Ln;}return {L,k:TAU/L};}
+let mode="goda", LAST=null;
+
+// ---- GODA ----
+function goda(){
+  const Hs=+$("gHs").value,T=+$("gT").value,h=+$("gh").value,d=+$("gd").value,hc=+$("ghc").value,bd=+$("gb").value,B=+$("gB").value,rw=1025;
+  if(!(Hs>0&&T>0&&h>0&&d>0))return null;
+  const {L,k}=disp(T,h),kh=k*h,b=bd*Math.PI/180,rg=rw*G,Hmax=Math.min(1.8*Hs,0.78*h);
+  const a1=0.6+0.5*Math.pow((4*Math.PI*h/L)/Math.sinh(4*Math.PI*h/L),2);
+  const hb=h, a2=d>0?Math.min(((hb-d)/(3*hb))*Math.pow(Hmax/d,2),2*d/Hmax):0;
+  const a3=1-(1-1/Math.cosh(kh));                       // h'=h
+  const eta=0.75*(1+Math.cos(b))*Hmax;
+  const p1=0.5*(1+Math.cos(b))*(a1+a2*Math.cos(b)*Math.cos(b))*rg*Hmax;
+  const p3=a3*p1, p4=eta>hc?p1*(1-hc/eta):0, pu=0.5*(1+Math.cos(b))*a1*a3*rg*Hmax;
+  const hcE=Math.min(hc,eta);
+  const Fa=0.5*(p1+p4)*hcE, Fb=0.5*(p1+p3)*h, P=Fa+Fb;   // N/m
+  const U=0.5*pu*B;
+  // overturning moment about heel (base), h'=h
+  const Mb=p3*h*(h/2)+0.5*(p1-p3)*h*(2*h/3);
+  const Ma=p4*hcE*(h+hcE/2)+0.5*(p1-p4)*hcE*(h+hcE/3);
+  const M=(Mb+Ma)/1e3;                                    // kN·m/m (horizontal only)
+  return {L,Hmax,a1,a2,a3,eta,p1:p1/1e3,p3:p3/1e3,p4:p4/1e3,pu:pu/1e3,P:P/1e3,U:U/1e3,M,h,hc,hcE,B,bd};
+}
+// ---- MORISON ----
+function morison(){
+  const H=+$("mH").value,T=+$("mT").value,h=+$("mh").value,D=+$("mD").value,Cd=+$("mCd").value,Cm=+$("mCm").value,rw=1025;
+  if(!(H>0&&T>0&&h>0&&D>0))return null;
+  const {L,k}=disp(T,h),kh=k*h,w=TAU/T;
+  const uhat0=(Math.PI*H/T)*Math.cosh(kh)/Math.sinh(kh), KC=uhat0*T/D;
+  const intU2=Math.pow(Math.PI*H/T,2)/Math.pow(Math.sinh(kh),2)*(h/2+Math.sinh(2*kh)/(4*k));
+  const FDm=0.5*rw*Cd*D*intU2;
+  const intA=w*(Math.PI*H/T)/k, FIm=rw*Cm*(Math.PI*D*D/4)*intA;
+  const Fmax=FIm>2*FDm?FIm:FDm+FIm*FIm/(4*FDm);
+  // moment about seabed: ∫ f (h+z) dz for drag & inertia amplitudes
+  // numeric
+  let MD=0,MI=0,N=200;
+  for(let i=0;i<N;i++){const z=-h+(i+0.5)/N*h, s=h+z;
+    const u=(Math.PI*H/T)*Math.cosh(k*s)/Math.sinh(kh); const a=w*u;
+    MD+=0.5*rw*Cd*D*u*u*s*(h/N); MI+=rw*Cm*(Math.PI*D*D/4)*a*s*(h/N);}
+  const Mmax=MI>2*MD?MI:MD+MI*MI/(4*MD);
+  return {L,k,kh,uhat0,KC,FDm:FDm/1e3,FIm:FIm/1e3,Fmax:Fmax/1e3,Mmax:Mmax/1e3,DL:D/L,H,T,h,D,Cd,Cm,w};
+}
+
+function update(){
+  if(mode=="goda"){
+    const R=goda(); if(!R)return; LAST={mode,R};
+    $("gP").textContent=fmt(R.P,0);$("gU").textContent=fmt(R.U,0);$("gM").textContent=fmt(R.M,0);
+    $("gHmax").textContent=fmt(R.Hmax,2);$("geta").textContent=fmt(R.eta,2);
+    $("gp1").textContent=fmt(R.p1,1);$("gp3").textContent=fmt(R.p3,1);$("gp4").textContent=fmt(R.p4,1);$("gpu").textContent=fmt(R.pu,1);
+    $("galpha").textContent=fmt(R.a1,2)+", "+fmt(R.a2,2)+", "+fmt(R.a3,2);$("gL").textContent=fmt(R.L,1);
+    $("expl").innerHTML="Goda design wave H<sub>max</sub> = "+fmt(R.Hmax,2)+" m. The wall carries a horizontal wave "
+      +"force of <b>"+fmt(R.P,0)+" kN per metre</b> and an uplift of "+fmt(R.U,0)+" kN/m under the base — both used to "
+      +"check sliding and overturning of the caisson.";
+    $("t1").textContent="Goda wave-pressure distribution on the wall";
+    $("t2").textContent="Horizontal force vs wave height Hs";
+    $("t3").textContent="Force components (horizontal P, uplift U)";
+    $("note1").innerHTML="Pressure acts from p₄ at the crest, p₁ at SWL, to p₃ at the base; p<sub>u</sub> is the uplift under the toe.";
+    $("note2").textContent="How the horizontal force grows with the design wave (current T, h, geometry).";
+    $("note3").textContent="Resultant horizontal force P and uplift U for the current case.";
+    $("eqn").innerHTML="p₁ = ½(1+cos&beta;)(&alpha;₁+&alpha;₂cos²&beta;)&rho;gH<sub>max</sub>;&nbsp; &eta;* = 0.75(1+cos&beta;)H<sub>max</sub>;&nbsp; p₃=&alpha;₃p₁;&nbsp; p<sub>u</sub>=½(1+cos&beta;)&alpha;₁&alpha;₃&rho;gH<sub>max</sub>.";
+    drawGodaWall(R);drawGodaSens(R);drawGodaBars(R);
+  }else{
+    const R=morison(); if(!R)return; LAST={mode,R};
+    $("mF").textContent=fmt(R.Fmax,1);$("mMo").textContent=fmt(R.Mmax,0);
+    $("mFD").textContent=fmt(R.FDm,1);$("mFI").textContent=fmt(R.FIm,1);
+    $("mu").textContent=fmt(R.uhat0,2);$("mKC").textContent=fmt(R.KC,1);$("mL").textContent=fmt(R.L,1);$("mDL").textContent=fmt(R.DL,3);
+    const dom=R.KC<10?"Inertia-dominated":(R.KC>20?"Drag-dominated":"Drag + inertia");
+    $("mDom").textContent=dom;
+    $("expl").innerHTML="The peak wave force on the pile is <b>"+fmt(R.Fmax,1)+" kN</b> (drag "+fmt(R.FDm,1)+" kN + inertia "
+      +fmt(R.FIm,1)+" kN, combined at the critical phase). With KC = "+fmt(R.KC,1)+", the loading is <b>"+dom.toLowerCase()+"</b>. "
+      +(R.DL>0.2?"Note D/L &gt; 0.2 — diffraction matters, Morison is marginal.":"D/L &lt; 0.2, so the pile is slender and Morison applies.");
+    $("t1").textContent="Force per unit length along the pile";
+    $("t2").textContent="Total force over one wave period";
+    $("t3").textContent="Velocity &amp; acceleration amplitude vs depth";
+    $("note1").innerHTML="Drag (∝u|u|) concentrates near the surface; inertia (∝∂u/∂t) is more uniform. Shaded = total envelope.";
+    $("note2").textContent="Drag and inertia are 90° out of phase; the peak total occurs between the two maxima.";
+    $("note3").textContent="Horizontal velocity and acceleration amplitude decay with depth (linear theory).";
+    $("eqn").innerHTML="f = ½&rho;C<sub>d</sub>D·u|u| + &rho;C<sub>m</sub>(&pi;D²/4)·∂u/∂t;&nbsp; F<sub>max</sub> = F<sub>D</sub> + F<sub>I</sub>²/(4F<sub>D</sub>) if F<sub>I</sub>≤2F<sub>D</sub>, else F<sub>I</sub>.";
+    drawPileProfile(R);drawMorPhase(R);drawMorKin(R);
+  }
+}
+
+/* ===== GODA drawings ===== */
+function drawGodaWall(R){
+  const cv=$("cv1"),ctx=cv.getContext("2d"),W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);ctx.fillStyle="#fff";ctx.fillRect(0,0,W,H);
+  const mT=18,mB=24,mL=40,mR=20,pw=W-mL-mR,ph=H-mT-mB;
+  const Vtop=Math.max(R.eta,R.hc)*1.15, Vbot=R.h*1.1, ppm=ph/(Vtop+Vbot);
+  const swlY=mT+Vtop*ppm, YY=z=>swlY-z*ppm;                 // z above SWL
+  const wallX=mL+pw*0.62, wallW=Math.max(R.B*ppm*0.5,40);
+  const baseY=YY(-R.h), crestY=YY(R.hc);
+  // sea
+  ctx.fillStyle="#dcebf3";ctx.fillRect(mL,swlY,wallX-mL,baseY-swlY);
+  // pressure scale (px per kPa) to fit left of wall
+  const pmax=Math.max(R.p1,R.p3,R.p4,1), pscale=(pw*0.5)/pmax;
+  const px=p=>wallX-p*pscale;
+  // pressure polygon (crest->SWL->base) left of wall
+  ctx.beginPath();ctx.moveTo(wallX,crestY);ctx.lineTo(px(R.p4),crestY);ctx.lineTo(px(R.p1),swlY);ctx.lineTo(px(R.p3),baseY);ctx.lineTo(wallX,baseY);ctx.closePath();
+  ctx.fillStyle="rgba(46,108,164,0.22)";ctx.fill();ctx.strokeStyle="#2e6ca4";ctx.lineWidth=1.8;ctx.stroke();
+  // uplift triangle under base
+  ctx.beginPath();ctx.moveTo(wallX,baseY);ctx.lineTo(wallX+wallW,baseY);ctx.lineTo(wallX,baseY+R.pu*pscale);ctx.closePath();
+  ctx.fillStyle="rgba(208,139,30,0.25)";ctx.fill();ctx.strokeStyle="#d08b1e";ctx.stroke();
+  // wall
+  ctx.fillStyle="#c9d3d8";ctx.strokeStyle="#6b7c86";ctx.lineWidth=2;ctx.fillRect(wallX,crestY,wallW,baseY-crestY);ctx.strokeRect(wallX,crestY,wallW,baseY-crestY);
+  // SWL
+  ctx.strokeStyle="#2e6ca4";ctx.setLineDash([6,4]);ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(mL,swlY);ctx.lineTo(wallX+wallW,swlY);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle="#2e6ca4";ctx.font="11px Segoe UI,Arial";ctx.textAlign="left";ctx.fillText("SWL",mL+2,swlY-4);
+  // seabed
+  ctx.strokeStyle="#b8a980";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(mL,baseY);ctx.lineTo(wallX+wallW+10,baseY);ctx.stroke();
+  // labels
+  ctx.fillStyle="#12324a";ctx.font="11px Segoe UI,Arial";ctx.textAlign="right";
+  ctx.fillText("p₄="+fmt(R.p4,0),px(R.p4)-4,crestY+4);
+  ctx.fillText("p₁="+fmt(R.p1,0)+" kPa",px(R.p1)-4,swlY-3);
+  ctx.fillText("p₃="+fmt(R.p3,0),px(R.p3)-4,baseY-3);
+  ctx.fillStyle="#b06a12";ctx.textAlign="left";ctx.fillText("pu="+fmt(R.pu,0),wallX+4,baseY+R.pu*pscale*0.5+4);
+  ctx.fillStyle="#5d7079";ctx.textAlign="center";ctx.fillText("η*="+fmt(R.eta,1)+" m",wallX+wallW/2,crestY-5);
+}
+function drawGodaSens(R){
+  const cv=$("cv2"),ctx=cv.getContext("2d"),W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);ctx.fillStyle="#fff";ctx.fillRect(0,0,W,H);
+  const mL=48,mR=14,mT=14,mB=32,pw=W-mL-mR,ph=H-mT-mB;
+  const Hs0=+$("gHs").value,Hmax=Math.max(Hs0*2,4);
+  const Pf=Hs=>{const g0=$("gHs").value;$("gHs").value=Hs;const r=goda();$("gHs").value=g0;return r?r.P:0;};
+  let vals=[],mx=0;for(let i=0;i<=60;i++){const hs=Hmax*i/60,p=Pf(hs);vals.push([hs,p]);if(p>mx)mx=p;}
+  mx*=1.1||1;
+  const PX=x=>mL+x/Hmax*pw,PY=y=>mT+ph-y/mx*ph;
+  ctx.font="10px Segoe UI,Arial";ctx.fillStyle="#5d7079";
+  for(let i=0;i<=4;i++){const y=mT+ph-i/4*ph,v=mx*i/4;ctx.strokeStyle="#eef2f5";ctx.beginPath();ctx.moveTo(mL,y);ctx.lineTo(mL+pw,y);ctx.stroke();ctx.textAlign="right";ctx.fillText(v.toFixed(0),mL-5,y+3);}
+  ctx.strokeStyle="#8aa1ad";ctx.strokeRect(mL,mT,pw,ph);
+  ctx.strokeStyle="#2e6ca4";ctx.lineWidth=2.2;ctx.beginPath();vals.forEach((p,i)=>{const x=PX(p[0]),y=PY(p[1]);i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.stroke();
+  ctx.fillStyle="#12324a";ctx.beginPath();ctx.arc(PX(Hs0),PY(R.P),5,0,TAU);ctx.fill();ctx.strokeStyle="#fff";ctx.lineWidth=1.4;ctx.stroke();
+  ctx.fillStyle="#12324a";ctx.font="12px Segoe UI,Arial";ctx.textAlign="center";ctx.fillText("Hs (m)",mL+pw/2,H-8);
+  ctx.save();ctx.translate(12,mT+ph/2);ctx.rotate(-Math.PI/2);ctx.fillText("P (kN/m)",0,0);ctx.restore();
+}
+function drawGodaBars(R){
+  const cv=$("cv3"),ctx=cv.getContext("2d"),W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);ctx.fillStyle="#fff";ctx.fillRect(0,0,W,H);
+  const mL=48,mR=16,mT=18,mB=36,pw=W-mL-mR,ph=H-mT-mB;
+  const vals=[["Horizontal P",R.P,"#2e6ca4"],["Uplift U",R.U,"#d08b1e"]];
+  const mx=Math.max(R.P,R.U)*1.2||1;
+  ctx.strokeStyle="#eef2f5";for(let i=0;i<=4;i++){const y=mT+ph-i/4*ph;ctx.beginPath();ctx.moveTo(mL,y);ctx.lineTo(mL+pw,y);ctx.stroke();ctx.fillStyle="#5d7079";ctx.font="10px Segoe UI,Arial";ctx.textAlign="right";ctx.fillText((mx*i/4).toFixed(0),mL-5,y+3);}
+  ctx.strokeStyle="#8aa1ad";ctx.strokeRect(mL,mT,pw,ph);
+  const bw=pw/vals.length*0.44;
+  vals.forEach((v,i)=>{const cx=mL+pw*(i+0.5)/vals.length,h=v[1]/mx*ph,y=mT+ph-h;
+    ctx.fillStyle=v[2];ctx.fillRect(cx-bw/2,y,bw,h);
+    ctx.fillStyle="#12324a";ctx.font="bold 12px Segoe UI,Arial";ctx.textAlign="center";ctx.fillText(v[1].toFixed(0),cx,y-5);
+    ctx.fillStyle="#5d7079";ctx.font="11px Segoe UI,Arial";ctx.fillText(v[0],cx,mT+ph+15);});
+  ctx.save();ctx.translate(12,mT+ph/2);ctx.rotate(-Math.PI/2);ctx.fillStyle="#12324a";ctx.font="12px Segoe UI,Arial";ctx.textAlign="center";ctx.fillText("force (kN/m)",0,0);ctx.restore();
+}
+
+/* ===== MORISON drawings ===== */
+function drawPileProfile(R){
+  const cv=$("cv1"),ctx=cv.getContext("2d"),W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);ctx.fillStyle="#fff";ctx.fillRect(0,0,W,H);
+  const mT=18,mB=24,mL=40,mR=20,pw=W-mL-mR,ph=H-mT-mB;
+  const ppm=ph/(R.h*1.12), swlY=mT+ph*0.06, YY=z=>swlY-z*ppm;  // z<=0
+  const pileX=mL+pw*0.30, pileW=Math.max(R.D*ppm,10);
+  // sea
+  ctx.fillStyle="#dcebf3";ctx.fillRect(mL,swlY,pw*0.62,YY(-R.h)-swlY);
+  // force per length profiles fD(z), fI(z)
+  const fD=z=>{const s=R.h+z,u=(Math.PI*R.H/R.T)*Math.cosh(R.k*s)/Math.sinh(R.kh);return 0.5*1025*R.Cd*R.D*u*u;};
+  const fI=z=>{const s=R.h+z,u=(Math.PI*R.H/R.T)*Math.cosh(R.k*s)/Math.sinh(R.kh),a=R.w*u;return 1025*R.Cm*(Math.PI*R.D*R.D/4)*a;};
+  let mxf=0;for(let z=-R.h;z<=0;z+=R.h/60){mxf=Math.max(mxf,fD(z),fI(z));}
+  const fscale=(pw*0.42)/(mxf||1), fx=f=>pileX+f*fscale;
+  // total envelope (fD+fI as reference) fill
+  ctx.beginPath();ctx.moveTo(pileX,YY(0));for(let z=0;z>=-R.h;z-=R.h/80){ctx.lineTo(fx(fD(z)+fI(z)),YY(z));}ctx.lineTo(pileX,YY(-R.h));ctx.closePath();
+  ctx.fillStyle="rgba(90,110,120,0.08)";ctx.fill();
+  // drag
+  ctx.strokeStyle="#c0392b";ctx.lineWidth=2;ctx.beginPath();for(let z=0,f=true;z>=-R.h;z-=R.h/80){const X=fx(fD(z)),Y=YY(z);f?ctx.moveTo(X,Y):ctx.lineTo(X,Y);f=false;}ctx.stroke();
+  // inertia
+  ctx.strokeStyle="#2e6ca4";ctx.lineWidth=2;ctx.beginPath();for(let z=0,f=true;z>=-R.h;z-=R.h/80){const X=fx(fI(z)),Y=YY(z);f?ctx.moveTo(X,Y):ctx.lineTo(X,Y);f=false;}ctx.stroke();
+  // pile
+  ctx.fillStyle="#c9d3d8";ctx.strokeStyle="#6b7c86";ctx.lineWidth=2;ctx.fillRect(pileX,YY(0),pileW,YY(-R.h)-YY(0));ctx.strokeRect(pileX,YY(0),pileW,YY(-R.h)-YY(0));
+  // SWL + seabed
+  ctx.strokeStyle="#2e6ca4";ctx.setLineDash([6,4]);ctx.beginPath();ctx.moveTo(mL,swlY);ctx.lineTo(mL+pw,swlY);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle="#2e6ca4";ctx.font="11px Segoe UI,Arial";ctx.textAlign="left";ctx.fillText("SWL",mL+2,swlY-4);
+  ctx.strokeStyle="#b8a980";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(mL,YY(-R.h));ctx.lineTo(mL+pw,YY(-R.h));ctx.stroke();
+  ctx.fillStyle="#8a7c66";ctx.fillText("seabed (h="+fmt(R.h,0)+" m)",mL+2,YY(-R.h)-4);
+  // legend
+  ctx.font="12px Segoe UI,Arial";ctx.textAlign="left";
+  ctx.fillStyle="#c0392b";ctx.fillText("— drag  f_D",mL+pw*0.66,mT+16);
+  ctx.fillStyle="#2e6ca4";ctx.fillText("— inertia  f_I",mL+pw*0.66,mT+34);
+}
+function drawMorPhase(R){
+  const cv=$("cv2"),ctx=cv.getContext("2d"),W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);ctx.fillStyle="#fff";ctx.fillRect(0,0,W,H);
+  const mL=44,mR=14,mT=14,mB=32,pw=W-mL-mR,ph=H-mT-mB,midY=mT+ph*0.5;
+  const FD=R.FDm,FI=R.FIm;
+  const Ft=th=>FD*Math.cos(th)*Math.abs(Math.cos(th))-FI*Math.sin(th);
+  let mx=0;for(let th=0;th<TAU;th+=0.02)mx=Math.max(mx,Math.abs(Ft(th)));mx*=1.15||1;
+  const PX=th=>mL+th/TAU*pw,PY=f=>midY-f/mx*ph*0.5;
+  ctx.strokeStyle="#eef2f5";for(let i=0;i<=4;i++){const y=mT+i/4*ph;ctx.beginPath();ctx.moveTo(mL,y);ctx.lineTo(mL+pw,y);ctx.stroke();}
+  ctx.strokeStyle="#8aa1ad";ctx.strokeRect(mL,mT,pw,ph);
+  ctx.strokeStyle="#cdd9df";ctx.beginPath();ctx.moveTo(mL,midY);ctx.lineTo(mL+pw,midY);ctx.stroke();
+  // drag & inertia components
+  ctx.strokeStyle="#c0392b";ctx.lineWidth=1.4;ctx.setLineDash([4,3]);ctx.beginPath();for(let th=0,f=true;th<=TAU;th+=0.02){const X=PX(th),Y=PY(FD*Math.cos(th)*Math.abs(Math.cos(th)));f?ctx.moveTo(X,Y):ctx.lineTo(X,Y);f=false;}ctx.stroke();
+  ctx.strokeStyle="#2e6ca4";ctx.beginPath();for(let th=0,f=true;th<=TAU;th+=0.02){const X=PX(th),Y=PY(-FI*Math.sin(th));f?ctx.moveTo(X,Y):ctx.lineTo(X,Y);f=false;}ctx.stroke();ctx.setLineDash([]);
+  // total
+  ctx.strokeStyle="#12324a";ctx.lineWidth=2.4;ctx.beginPath();for(let th=0,f=true;th<=TAU;th+=0.01){const X=PX(th),Y=PY(Ft(th));f?ctx.moveTo(X,Y):ctx.lineTo(X,Y);f=false;}ctx.stroke();
+  ctx.fillStyle="#5d7079";ctx.font="11px Segoe UI,Arial";ctx.textAlign="center";ctx.fillText("phase ωt (0 → 2π)",mL+pw/2,H-8);
+  ctx.save();ctx.translate(12,midY);ctx.rotate(-Math.PI/2);ctx.fillText("force (kN)",0,0);ctx.restore();
+  ctx.textAlign="left";ctx.fillStyle="#12324a";ctx.font="11px Segoe UI,Arial";ctx.fillText("total",mL+4,mT+12);
+}
+function drawMorKin(R){
+  const cv=$("cv3"),ctx=cv.getContext("2d"),W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);ctx.fillStyle="#fff";ctx.fillRect(0,0,W,H);
+  const mL=30,mR=14,mT=14,mB=32,pw=W-mL-mR,ph=H-mT-mB;
+  const u=z=>{const s=R.h+z;return (Math.PI*R.H/R.T)*Math.cosh(R.k*s)/Math.sinh(R.kh);};
+  const a=z=>R.w*u(z);
+  const umax=u(0),amax=a(0);
+  const PXu=v=>mL+v/umax*pw*0.5, PXa=v=>mL+pw*0.5+v/amax*pw*0.5, YY=z=>mT+(-z/R.h)*ph;
+  ctx.strokeStyle="#8aa1ad";ctx.strokeRect(mL,mT,pw,ph);
+  ctx.strokeStyle="#c0392b";ctx.lineWidth=2;ctx.beginPath();for(let z=0,f=true;z>=-R.h;z-=R.h/60){const X=PXu(u(z)),Y=YY(z);f?ctx.moveTo(X,Y):ctx.lineTo(X,Y);f=false;}ctx.stroke();
+  ctx.strokeStyle="#2e6ca4";ctx.lineWidth=2;ctx.beginPath();for(let z=0,f=true;z>=-R.h;z-=R.h/60){const X=PXa(a(z)),Y=YY(z);f?ctx.moveTo(X,Y):ctx.lineTo(X,Y);f=false;}ctx.stroke();
+  ctx.fillStyle="#5d7079";ctx.font="10px Segoe UI,Arial";ctx.textAlign="center";
+  ctx.fillStyle="#c0392b";ctx.fillText("u (m/s)",mL+pw*0.25,mT+ph+14);
+  ctx.fillStyle="#2e6ca4";ctx.fillText("∂u/∂t (m/s²)",mL+pw*0.75,mT+ph+14);
+  ctx.save();ctx.translate(12,mT+ph/2);ctx.rotate(-Math.PI/2);ctx.fillStyle="#5d7079";ctx.fillText("depth",0,0);ctx.restore();
+}
+
+// mode switch
+function setMode(m){
+  mode=m;
+  $("mGoda").classList.toggle("on",m=="goda");$("mMor").classList.toggle("on",m=="mor");
+  $("inGoda").classList.toggle("hide",m!="goda");$("inMor").classList.toggle("hide",m!="mor");
+  $("resGoda").classList.toggle("hide",m!="goda");$("resMor").classList.toggle("hide",m!="mor");
+  update();
+}
+$("mGoda").addEventListener("click",()=>setMode("goda"));
+$("mMor").addEventListener("click",()=>setMode("mor"));
+["gHs","gT","gh","gd","ghc","gb","gB"].forEach(id=>$(id).addEventListener("input",update));
+["mH","mT","mh","mD","mCd","mCm"].forEach(id=>$(id).addEventListener("input",update));
+
+$("rep").addEventListener("click",()=>{
+  if(!LAST)update(); const J=window.jspdf&&window.jspdf.jsPDF; if(!J){window.print();return;}
+  const doc=new J({unit:"pt",format:"a4"}),P=40; let y=48; const M=LAST.mode,R=LAST.R;
+  doc.setFont("helvetica","bold");doc.setFontSize(16);doc.setTextColor(18,50,74);
+  doc.text("Wave Forces — "+(M=="goda"?"Vertical Wall (Goda)":"Slender Pile (Morison)")+" — Report",P,y);y+=18;
+  doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(90,112,121);
+  doc.text((M=="goda"?"Goda (2000)":"Morison et al. (1950)")+" · M. N. Sahvelet, Troy Lab, Purdue University",P,y);y+=20;
+  doc.setDrawColor(210,224,231);doc.line(P,y,555,y);y+=18;
+  doc.setFontSize(11);doc.setTextColor(26,42,54);doc.setFont("helvetica","bold");doc.text("Inputs & results",P,y);y+=15;
+  doc.setFont("helvetica","normal");doc.setFontSize(10);
+  let rows;
+  if(M=="goda") rows=[["Hs / T / h","%s m / %s s / %s m".replace("%s",(+$("gHs").value)).replace("%s",(+$("gT").value)).replace("%s",(+$("gh").value))],
+    ["Berm d / crest hc / beta / B",(+$("gd").value)+" m / "+(+$("ghc").value)+" m / "+(+$("gb").value)+"° / "+(+$("gB").value)+" m"],
+    ["Design height, Hmax",R.Hmax.toFixed(2)+" m"],["alpha1 / alpha2 / alpha3",R.a1.toFixed(2)+" / "+R.a2.toFixed(2)+" / "+R.a3.toFixed(2)],
+    ["p1 / p3 / p4",R.p1.toFixed(1)+" / "+R.p3.toFixed(1)+" / "+R.p4.toFixed(1)+" kPa"],["Uplift pu",R.pu.toFixed(1)+" kPa"],
+    ["Horizontal force, P",R.P.toFixed(0)+" kN/m"],["Uplift force, U",R.U.toFixed(0)+" kN/m"],["Overturning moment",R.M.toFixed(0)+" kN·m/m"]];
+  else rows=[["H / T / h",(+$("mH").value)+" m / "+(+$("mT").value)+" s / "+(+$("mh").value)+" m"],
+    ["Pile D / Cd / Cm",(+$("mD").value)+" m / "+(+$("mCd").value)+" / "+(+$("mCm").value)],
+    ["Wavelength / D/L",R.L.toFixed(1)+" m / "+R.DL.toFixed(3)],["Surface velocity, umax",R.uhat0.toFixed(2)+" m/s"],
+    ["Keulegan-Carpenter, KC",R.KC.toFixed(1)],["Max drag / inertia",R.FDm.toFixed(1)+" / "+R.FIm.toFixed(1)+" kN"],
+    ["Max total force, Fmax",R.Fmax.toFixed(1)+" kN"],["Max moment (base)",R.Mmax.toFixed(0)+" kN·m"]];
+  rows.forEach(r=>{doc.text(r[0],P,y);doc.text(String(r[1]),250,y,{maxWidth:300});y+=14;});
+  y+=8;
+  try{const i1=$("cv1").toDataURL("image/png"),w=515,h=w*300/1020;if(y+h>800){doc.addPage();y=48;}doc.addImage(i1,"PNG",P,y,w,h);y+=h+10;}catch(e){}
+  try{const i2=$("cv2").toDataURL("image/png"),w=250,h=w*250/500;const i3=$("cv3").toDataURL("image/png");
+    if(y+h>800){doc.addPage();y=48;}doc.addImage(i2,"PNG",P,y,w,h);doc.addImage(i3,"PNG",P+265,y,w,h);y+=h+10;}catch(e){}
+  if(y>780){doc.addPage();y=48;}
+  doc.setFontSize(7.5);doc.setTextColor(120,130,138);
+  doc.text(doc.splitTextToSize(M=="goda"
+    ?"Goda (2000) pressure formulae: p1=0.5(1+cos b)(a1+a2 cos^2 b) rho g Hmax; eta*=0.75(1+cos b)Hmax; pu=0.5(1+cos b)a1 a3 rho g Hmax. Refs: Goda (2000); USACE CEM (2002) Part VI."
+    :"Morison equation: f=0.5 rho Cd D u|u| + rho Cm (pi D^2/4) du/dt; linear-theory kinematics; Fmax combines drag & inertia at the critical phase. Refs: Morison et al. (1950); USACE CEM (2002); Sarpkaya & Isaacson (1981).",515),P,y);
+  doc.save("wave-forces-"+M+"-report.pdf");
+});
+
+setMode("goda");
+window.addEventListener("resize",update);
+</script>
+</body>
+</html>
+
+{% endraw %}
