@@ -21,3 +21,5 @@ This page collects the web calculators and small utilities developed for Troy La
 ## Wave Prediction
 - [Wind-Wave Prediction (SPM 1984)](/tools/wind-wave/)
 
+## Design Suites
+- [Breakwater Designer](/tools/breakwater-designer/)
