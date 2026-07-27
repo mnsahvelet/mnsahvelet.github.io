@@ -1,0 +1,432 @@
+---
+title: "Breakwater Designer"
+permalink: /tools/breakwater-designer/
+layout: none
+---
+{% raw %}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Breakwater Designer — M. N. Sahvelet</title>
+<style>
+:root{--navy:#12324a;--teal:#1c7293;--line:#d3e0e7;--ink:#1a2a36;--mut:#5d7079;--accent:#2e6ca4;--bg:#fff;--card:#f7fafc;
+--green:#2e8b57;--orange:#d08b1e;--red:#c0392b;--stone:#9a8c78;}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.5}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+header{background:var(--navy);color:#fff;padding:18px 22px}
+header .row{max-width:1120px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:baseline;gap:14px;justify-content:space-between}
+header h1{margin:0;font-size:22px;font-weight:700}
+header .sub{color:#9fd0da;font-size:13px}
+header nav a{color:#cfe4ea;font-size:13px;margin-left:14px}
+.wrap{max-width:1120px;margin:0 auto;padding:20px 22px 60px}
+.intro{color:var(--mut);font-size:14px;margin:6px 0 16px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.panel h2{margin:0 0 10px;font-size:14px;color:var(--navy);letter-spacing:.02em;text-transform:uppercase}
+label{display:block;font-size:12px;color:var(--mut);margin:8px 0 3px}
+input[type=number],select{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:7px;font-size:14px;background:#fff}
+.ig{display:grid;grid-template-columns:repeat(4,1fr);gap:8px 14px}
+@media(max-width:820px){.ig{grid-template-columns:repeat(2,1fr)}}
+.hint{font-size:11px;color:var(--mut);margin-top:4px}
+.dash{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin:16px 0}
+@media(max-width:820px){.dash{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:500px){.dash{grid-template-columns:repeat(2,1fr)}}
+.metric{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;border-top:3px solid var(--teal)}
+.metric .k{font-size:11px;color:var(--mut)}
+.metric .v{font-size:19px;font-weight:700;color:var(--navy);margin-top:2px}
+.metric .v small{font-size:11px;font-weight:400;color:var(--mut)}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:16px 0 0}
+.tabs button{padding:8px 14px;border:1px solid var(--line);background:#fff;border-radius:8px 8px 0 0;font-size:13px;font-weight:600;color:var(--mut);cursor:pointer}
+.tabs button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.tabpanel{border:1px solid var(--line);border-radius:0 10px 10px 10px;padding:16px;background:var(--card)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+@media(max-width:760px){.cols{grid-template-columns:1fr}}
+.res{display:grid;grid-template-columns:1fr 1fr;gap:9px 16px}
+.res .k{font-size:12px;color:var(--mut)}
+.res .v{font-size:16px;font-weight:600;color:var(--ink)}
+.res .v small{font-weight:400;color:var(--mut);font-size:11px}
+.hl{padding:12px 14px;border-radius:9px;background:#fff;border:1px solid var(--line);border-left:5px solid var(--teal);margin-bottom:12px}
+.hl .lab{font-size:11px;color:var(--mut);text-transform:uppercase}
+.hl .num{font-size:22px;font-weight:700;color:var(--navy)}
+.hl .num small{font-size:12px;font-weight:400;color:var(--mut)}
+.note{font-size:12px;color:var(--mut);margin-top:8px}
+canvas{width:100%;display:block;background:#fff;border-radius:8px;border:1px solid var(--line);margin-top:12px}
+.btn{display:inline-block;margin-top:16px;padding:10px 18px;border:0;border-radius:8px;background:var(--navy);color:#fff;font-size:14px;font-weight:600;cursor:pointer}
+.btn:hover{background:#1c4a6b}
+.hide{display:none}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;color:#fff;background:var(--teal)}
+footer{border-top:1px solid var(--line);color:var(--mut);font-size:12.5px;padding:16px 22px;text-align:center}
+</style>
+</head>
+<body>
+<header><div class="row">
+  <div><h1>Breakwater Designer</h1>
+       <div class="sub">Conceptual design of coastal structures · hydraulic &amp; structural response</div></div>
+  <nav><a href="/tools/">&larr; Tools</a><a href="/files/breakwater-designer-theory.pdf">📄 Theory (PDF)</a></nav>
+</div></header>
+
+<div class="wrap">
+  <p class="intro">An integrated conceptual-design tool for rubble-mound and vertical (caisson) breakwaters, built from
+  published design formulae (Rock Manual, EurOtop, Goda, Van der Meer, d'Angremond). Set the design conditions and
+  geometry once; the dashboard summarises the key responses and each tab gives the detail. For conceptual design only —
+  see the <a href="/files/breakwater-designer-theory.pdf">theory note</a> for formulae, validity limits and references.</p>
+
+  <div class="panel">
+    <h2>Design conditions &amp; geometry</h2>
+    <div class="ig">
+      <div><label>Sig. wave height, H<sub>s</sub> (m)</label><input id="Hs" type="number" value="3" step="0.1" min="0.2"></div>
+      <div><label>Peak period, T<sub>p</sub> (s)</label><input id="Tp" type="number" value="8" step="0.5" min="1"></div>
+      <div><label>Water depth at toe, h (m)</label><input id="h" type="number" value="8" step="0.5" min="1"></div>
+      <div><label>Front slope, cot&alpha;</label><input id="cota" type="number" value="2" step="0.25" min="1"></div>
+      <div><label>Crest freeboard, R<sub>c</sub> (m)</label><input id="Rc" type="number" value="4" step="0.25" min="-5"></div>
+      <div><label>Crest width, B (m)</label><input id="Bc" type="number" value="6" step="0.5" min="1"></div>
+      <div><label>Armour &rho;<sub>r</sub> (kg/m³)</label><input id="rr" type="number" value="2650" step="10" min="1500"></div>
+      <div><label>Water &rho;<sub>w</sub> (kg/m³)</label><input id="rw" type="number" value="1025" step="5" min="900"></div>
+    </div>
+  </div>
+
+  <div class="dash" id="dash">
+    <div class="metric"><div class="k">Armour M<sub>50</sub></div><div class="v"><span id="dM">–</span> <small>t</small></div></div>
+    <div class="metric"><div class="k">Run-up R<sub>2%</sub></div><div class="v"><span id="dR">–</span> <small>m</small></div></div>
+    <div class="metric"><div class="k">Overtopping q</div><div class="v"><span id="dq">–</span> <small>l/s/m</small></div></div>
+    <div class="metric"><div class="k">Transmission K<sub>t</sub></div><div class="v"><span id="dKt">–</span></div></div>
+    <div class="metric"><div class="k">Reflection K<sub>r</sub></div><div class="v"><span id="dKr">–</span></div></div>
+    <div class="metric"><div class="k">Caisson SF<sub>slide</sub></div><div class="v"><span id="dSF">–</span></div></div>
+  </div>
+
+  <canvas id="sec" width="1120" height="280"></canvas>
+  <div class="note" id="secnote"></div>
+
+  <div class="tabs" id="tabs">
+    <button data-t="armour" class="on">Armour</button>
+    <button data-t="toe">Toe &amp; Rear</button>
+    <button data-t="over">Run-up &amp; Overtopping</button>
+    <button data-t="trans">Transmission</button>
+    <button data-t="refl">Reflection</button>
+    <button data-t="caisson">Caisson</button>
+  </div>
+
+  <!-- ARMOUR -->
+  <div class="tabpanel" id="p_armour"><div class="cols">
+    <div>
+      <label>Armour unit type</label>
+      <select id="aType">
+        <option value="rough">Rough angular rock (2 layers)</option>
+        <option value="smooth">Smooth rounded rock (2 layers)</option>
+        <option value="cube">Modified cube — concrete</option>
+        <option value="tetra">Tetrapod — concrete</option>
+        <option value="dolos">Dolos — concrete</option>
+        <option value="accropode">Accropode — concrete (1 layer)</option>
+      </select>
+      <label>Wave condition</label>
+      <select id="aCond"><option value="nb">Non-breaking</option><option value="b">Breaking</option></select>
+      <div class="ig" style="grid-template-columns:1fr 1fr 1fr">
+        <div><label>Permeability P</label><select id="aP"><option>0.1</option><option selected>0.4</option><option>0.5</option><option>0.6</option></select></div>
+        <div><label>Damage S</label><input id="aS" type="number" value="2" step="1" min="1"></div>
+        <div><label>Waves N</label><input id="aN" type="number" value="3000" step="500" min="500"></div>
+      </div>
+    </div>
+    <div>
+      <div class="hl"><div class="lab">Governing median armour</div><div class="num"><span id="agM">–</span> <small>t · D<sub>n50</sub> = <span id="agD">–</span> m</small></div><div class="note" id="agWhy"></div></div>
+      <div class="res">
+        <div><div class="k">Hudson K<sub>D</sub></div><div class="v"><span id="aKD">–</span></div></div>
+        <div><div class="k">Hudson M<sub>50</sub></div><div class="v"><span id="aMh">–</span> <small>t</small></div></div>
+        <div><div class="k">Van der Meer regime</div><div class="v" style="font-size:13px"><span id="aReg">–</span></div></div>
+        <div><div class="k">Van der Meer M<sub>50</sub></div><div class="v"><span id="aMv">–</span> <small>t</small></div></div>
+        <div><div class="k">Layer thickness t<sub>a</sub></div><div class="v"><span id="ata">–</span> <small>m</small></div></div>
+        <div><div class="k">Relative density &Delta;</div><div class="v"><span id="aD">–</span></div></div>
+      </div>
+    </div>
+  </div></div>
+
+  <!-- TOE & REAR -->
+  <div class="tabpanel hide" id="p_toe"><div class="cols">
+    <div>
+      <label>Toe depth below SWL, h<sub>t</sub> (m)</label><input id="ht" type="number" value="6" step="0.5" min="0.5">
+      <label>Toe damage number, N<sub>od</sub></label>
+      <select id="Nod"><option value="0.5">0.5 — no damage</option><option value="2" selected>2 — acceptable</option><option value="4">4 — failure</option></select>
+      <div class="note">Rear-side sizing uses the mean overtopping q (Run-up &amp; Overtopping tab).</div>
+    </div>
+    <div>
+      <div class="hl"><div class="lab">Toe stone (median)</div><div class="num"><span id="tM">–</span> <small>t · D<sub>n50</sub> = <span id="tD">–</span> m</small></div></div>
+      <div class="res">
+        <div><div class="k">h<sub>t</sub>/h</div><div class="v"><span id="tR">–</span></div></div>
+        <div><div class="k">Toe stability N<sub>s</sub></div><div class="v"><span id="tNs">–</span></div></div>
+        <div><div class="k">Rear armour guidance</div><div class="v" style="font-size:13px"><span id="rG">–</span></div></div>
+        <div><div class="k">Suggested rear D<sub>n50</sub></div><div class="v"><span id="rD">–</span> <small>m</small></div></div>
+      </div>
+      <div class="note" id="rNote"></div>
+    </div>
+  </div></div>
+
+  <!-- OVERTOPPING -->
+  <div class="tabpanel hide" id="p_over"><div class="cols">
+    <div>
+      <label>Surface roughness, &gamma;<sub>f</sub></label>
+      <select id="gf"><option value="0.40">Rock, 2 layers permeable (0.40)</option><option value="0.55">Rock, 2 layers imperm. (0.55)</option>
+        <option value="1.00">Smooth / concrete (1.00)</option><option value="0.47">Cubes (0.47)</option><option value="0.38">Tetrapods (0.38)</option></select>
+      <label>Wave obliquity, &beta; (deg)</label><input id="beta" type="number" value="0" step="5" min="0" max="80">
+    </div>
+    <div>
+      <div class="hl"><div class="lab">Mean overtopping, q</div><div class="num"><span id="oq">–</span> <small>l/s per m</small></div><div class="note" id="oCls"></div></div>
+      <div class="res">
+        <div><div class="k">Iribarren &xi;<sub>m-1,0</sub></div><div class="v"><span id="oxi">–</span></div></div>
+        <div><div class="k">2% run-up R<sub>2%</sub></div><div class="v"><span id="oR2">–</span> <small>m</small></div></div>
+        <div><div class="k">Crest check</div><div class="v" style="font-size:13px"><span id="oCk">–</span></div></div>
+        <div><div class="k">R<sub>c</sub> / H<sub>s</sub></div><div class="v"><span id="oRcHs">–</span></div></div>
+      </div>
+    </div>
+  </div></div>
+
+  <!-- TRANSMISSION -->
+  <div class="tabpanel hide" id="p_trans"><div class="cols">
+    <div>
+      <label>Structure permeability</label>
+      <select id="tPerm"><option value="0.64" selected>Permeable rubble (0.64)</option><option value="0.80">Impermeable / smooth (0.80)</option></select>
+      <div class="note">Uses crest freeboard R<sub>c</sub> (negative = submerged), crest width B and front slope from the design panel, plus armour D<sub>n50</sub>.</div>
+    </div>
+    <div>
+      <div class="hl"><div class="lab">Transmission coefficient K<sub>t</sub></div><div class="num"><span id="xKt">–</span> <small>· H<sub>transmitted</sub> = <span id="xHt">–</span> m</small></div></div>
+      <div class="res">
+        <div><div class="k">Iribarren &xi;<sub>op</sub></div><div class="v"><span id="xxi">–</span></div></div>
+        <div><div class="k">R<sub>c</sub> / H<sub>s</sub></div><div class="v"><span id="xRc">–</span></div></div>
+        <div><div class="k">B / H<sub>s</sub></div><div class="v"><span id="xB">–</span></div></div>
+        <div><div class="k">Transmitted energy</div><div class="v"><span id="xE">–</span> <small>%</small></div></div>
+      </div>
+      <div class="note">d'Angremond, Van der Meer &amp; De Jong (1996); bounded 0.075 ≤ K<sub>t</sub> ≤ 0.8.</div>
+    </div>
+  </div></div>
+
+  <!-- REFLECTION -->
+  <div class="tabpanel hide" id="p_refl"><div class="cols">
+    <div>
+      <label>Slope type (K<sub>r</sub> = tanh(a·&xi;<sup>b</sup>))</label>
+      <select id="rType"><option value="0.12,0.87" selected>Rock, permeable</option><option value="0.14,0.90">Rock, impermeable core</option><option value="0.16,0.73">Smooth impermeable</option></select>
+    </div>
+    <div>
+      <div class="hl"><div class="lab">Reflection coefficient K<sub>r</sub></div><div class="num"><span id="fKr">–</span> <small>· reflected energy K<sub>r</sub>² = <span id="fE">–</span>%</small></div></div>
+      <div class="res">
+        <div><div class="k">Iribarren &xi;<sub>op</sub></div><div class="v"><span id="fxi">–</span></div></div>
+        <div><div class="k">Reflected height H<sub>r</sub></div><div class="v"><span id="fHr">–</span> <small>m</small></div></div>
+      </div>
+      <div class="note">Zanuttigh &amp; Van der Meer (2008). See the Reflection tool for the full standing-wave envelope.</div>
+    </div>
+  </div></div>
+
+  <!-- CAISSON -->
+  <div class="tabpanel hide" id="p_caisson"><div class="cols">
+    <div>
+      <div class="ig" style="grid-template-columns:1fr 1fr">
+        <div><label>Caisson width, B<sub>c</sub> (m)</label><input id="cB" type="number" value="8" step="0.5" min="2"></div>
+        <div><label>Crest above SWL, h<sub>c</sub> (m)</label><input id="chc" type="number" value="5" step="0.5" min="0"></div>
+        <div><label>Submerged weight (kN/m)</label><input id="cW" type="number" value="1800" step="50" min="100"></div>
+        <div><label>Friction, &mu;</label><input id="cmu" type="number" value="0.6" step="0.05" min="0.3"></div>
+      </div>
+      <div class="note">Goda pressures use H<sub>s</sub>, T<sub>p</sub>, depth h from the design panel (H<sub>max</sub>=1.8H<sub>s</sub>, capped at 0.78h).</div>
+    </div>
+    <div>
+      <div class="hl" id="cHL"><div class="lab">Stability (must exceed ~1.2)</div><div class="num">SF<sub>slide</sub> = <span id="cSFs">–</span> &nbsp; SF<sub>over</sub> = <span id="cSFo">–</span></div><div class="note" id="cVerdict"></div></div>
+      <div class="res">
+        <div><div class="k">Design height H<sub>max</sub></div><div class="v"><span id="cHmax">–</span> <small>m</small></div></div>
+        <div><div class="k">Horizontal force P</div><div class="v"><span id="cP">–</span> <small>kN/m</small></div></div>
+        <div><div class="k">Uplift U</div><div class="v"><span id="cU">–</span> <small>kN/m</small></div></div>
+        <div><div class="k">p₁ at SWL</div><div class="v"><span id="cp1">–</span> <small>kPa</small></div></div>
+      </div>
+    </div>
+  </div></div>
+
+  <button class="btn" id="rep">⬇ Download design summary (PDF)</button>
+</div>
+
+<footer>Breakwater Designer · Muhammed N. Sahvelet, Troy Lab, Purdue University · conceptual design from published formulae.
+  See the <a href="/files/breakwater-designer-theory.pdf">theory note</a> for details and references.</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+const G=9.81,TAU=2*Math.PI;
+const $=id=>document.getElementById(id);
+const fmt=(x,d)=>isFinite(x)?x.toFixed(d):"–";
+function disp(T,d){let L0=G*T*T/TAU,L=L0;for(let i=0;i<200;i++){const Ln=L0*Math.tanh(TAU*d/L);if(Math.abs(Ln-L)<1e-9){L=Ln;break;}L=Ln;}return{L,k:TAU/L};}
+const ARM={rough:{kdb:2.0,kdn:4.0,kl:1.15,n:2,rock:1},smooth:{kdb:1.2,kdn:2.4,kl:1.02,n:2,rock:1},
+  cube:{kdb:6.5,kdn:7.5,kl:1.10,n:2,rock:0},tetra:{kdb:7.0,kdn:8.0,kl:1.04,n:2,rock:0},
+  dolos:{kdb:15.8,kdn:31.8,kl:0.94,n:2,rock:0},accropode:{kdb:12,kdn:15,kl:1.51,n:1,rock:0}};
+
+function S(){ // shared
+  const Hs=+$("Hs").value,Tp=+$("Tp").value,h=+$("h").value,cota=+$("cota").value,Rc=+$("Rc").value,Bc=+$("Bc").value,rr=+$("rr").value,rw=+$("rw").value;
+  const {L}=disp(Tp,h); return {Hs,Tp,h,cota,Rc,Bc,rr,rw,D:rr/rw-1,L};
+}
+function armour(s){
+  const a=ARM[$("aType").value],KD=$("aCond").value=="b"?a.kdb:a.kdn,P=+$("aP").value,Sd=+$("aS").value,N=+$("aN").value;
+  const Mh=s.rr*Math.pow(s.Hs,3)/(KD*Math.pow(s.D,3)*s.cota),Dnh=Math.pow(Mh/s.rr,1/3),ta=a.n*a.kl*Dnh;
+  let Mv=NaN,Dnv=NaN,reg="—";
+  if(a.rock){const tana=1/s.cota,Tm=s.Tp/1.15,sm=TAU*s.Hs/(G*Tm*Tm),xim=tana/Math.sqrt(sm);
+    const xicr=Math.pow(6.2*Math.pow(P,0.31)*Math.sqrt(tana),1/(P+0.5));
+    const NsP=6.2*Math.pow(P,0.18)*Math.pow(Sd/Math.sqrt(N),0.2)*Math.pow(xim,-0.5);
+    const NsS=1.0*Math.pow(P,-0.13)*Math.pow(Sd/Math.sqrt(N),0.2)*Math.sqrt(s.cota)*Math.pow(xim,P);
+    reg=xim<xicr?"Plunging":"Surging";const Ns=xim<xicr?NsP:NsS;Dnv=s.Hs/(s.D*Ns);Mv=s.rr*Math.pow(Dnv,3);}
+  const useV=a.rock&&Mv>=Mh,Mg=a.rock?Math.max(Mh,Mv):Mh,Dg=useV?Dnv:Dnh;
+  return {KD,Mh,Dnh,ta,Mv,Dnv,reg,rock:a.rock,Mg,Dg,useV,kl:a.kl};
+}
+function toe(s){
+  const ht=+$("ht").value,Nod=+$("Nod").value,r=Math.min(ht/s.h,0.98);
+  const Ns=(2.0+6.2*Math.pow(r,2.7))*Math.pow(Nod,0.15),Dn=s.Hs/(s.D*Ns),M=s.rr*Math.pow(Dn,3)/1000;
+  return {ht,Nod,r,Ns,Dn,M};
+}
+function overtop(s){
+  const gf=+$("gf").value,beta=+$("beta").value,tana=1/s.cota,Tm=s.Tp/1.1,Lm=G*Tm*Tm/TAU,sm=s.Hs/Lm,xi=tana/Math.sqrt(sm);
+  const b=Math.min(Math.abs(beta),80),gbr=1-0.0022*b,gbo=1-0.0033*b;
+  const R2=s.Hs*Math.min(1.65*gf*gbr*xi,1.0*gf*gbr*(4-1.5/Math.sqrt(xi)));
+  const base=Math.sqrt(G*s.Hs*s.Hs*s.Hs),Rc=Math.max(s.Rc,0.01);
+  const qa=(0.023/Math.sqrt(tana))*xi*Math.exp(-Math.pow(2.7*Rc/(s.Hs*xi*gf*gbo),1.3));
+  const qb=0.09*Math.exp(-Math.pow(1.5*Rc/(s.Hs*gf*gbo),1.3));
+  const q=base*Math.min(qa,qb)*1000;
+  return {xi,R2,q,gf,beta};
+}
+function trans(s,Dn50){
+  const perm=+$("tPerm").value,sop=TAU*s.Hs/(G*s.Tp*s.Tp),xi=(1/s.cota)/Math.sqrt(sop);
+  let Kt=-0.4*(s.Rc/s.Hs)+perm*Math.pow(s.Bc/s.Hs,-0.31)*(1-Math.exp(-0.5*xi));
+  Kt=Math.max(0.075,Math.min(0.8,Kt));
+  return {xi,Kt,Ht:Kt*s.Hs,RcHs:s.Rc/s.Hs,BHs:s.Bc/s.Hs};
+}
+function refl(s){
+  const ab=$("rType").value.split(",").map(Number),sop=TAU*s.Hs/(G*s.Tp*s.Tp),xi=(1/s.cota)/Math.sqrt(sop);
+  const Kr=Math.tanh(ab[0]*Math.pow(xi,ab[1]));
+  return {xi,Kr,Hr:Kr*s.Hs};
+}
+function caisson(s){
+  const B=+$("cB").value,hc=+$("chc").value,W=+$("cW").value,mu=+$("cmu").value,rw=s.rw,rg=rw*G;
+  const {L,k}=disp(s.Tp,s.h),kh=k*s.h,Hmax=Math.min(1.8*s.Hs,0.78*s.h);
+  const a1=0.6+0.5*Math.pow((4*Math.PI*s.h/L)/Math.sinh(4*Math.PI*s.h/L),2),a3=1-(1-1/Math.cosh(kh));
+  const eta=1.5*Hmax,p1=a1*rg*Hmax,p3=a3*p1,p4=eta>hc?p1*(1-hc/eta):0,pu=a1*a3*rg*Hmax; // (1+cos0)=2 head-on
+  const hcE=Math.min(hc,eta),P=(0.5*(p1+p4)*hcE+0.5*(p1+p3)*s.h)/1e3,U=(0.5*pu*B)/1e3;
+  const Mb=p3*s.h*(s.h/2)+0.5*(p1-p3)*s.h*(2*s.h/3),Ma=p4*hcE*(s.h+hcE/2)+0.5*(p1-p4)*hcE*(s.h+hcE/3),Mp=(Mb+Ma)/1e3;
+  const Mu=U*(2*B/3),SFs=mu*(W-U)/P,SFo=(W*B/2)/(Mp+Mu);
+  return {B,hc,W,mu,Hmax,p1:p1/1e3,p3:p3/1e3,p4:p4/1e3,pu:pu/1e3,P,U,Mp,SFs,SFo};
+}
+
+let R={};
+function update(){
+  const s=S(); if(!(s.Hs>0&&s.Tp>0&&s.h>0&&s.cota>=1))return;
+  const a=armour(s),t=toe(s),o=overtop(s),Dn50=a.Dg,x=trans(s,Dn50),f=refl(s),c=caisson(s);
+  // rear guidance from overtopping
+  let rearFac,rearWhy;
+  if(o.q>10){rearFac=1.0;rearWhy="Heavy overtopping (q>10 l/s/m): size rear armour equal to the front.";}
+  else if(o.q>1){rearFac=0.75;rearWhy="Moderate overtopping (1–10 l/s/m): rear armour ≈ 0.75× the front stone.";}
+  else{rearFac=0.5;rearWhy="Little overtopping (q<1 l/s/m): rear armour ≈ 0.5× the front stone (indicative).";}
+  const rearDn=rearFac*a.Dg;
+  R={s,a,t,o,x,f,c,rearFac,rearWhy,rearDn};
+  // dashboard
+  $("dM").textContent=fmt(a.Mg/1000,2);$("dR").textContent=fmt(o.R2,2);$("dq").textContent=o.q<0.01?o.q.toExponential(1):fmt(o.q,1);
+  $("dKt").textContent=fmt(x.Kt,2);$("dKr").textContent=fmt(f.Kr,2);$("dSF").textContent=fmt(c.SFs,2);
+  colorMetric("dSF",c.SFs>=1.2?"#2e8b57":c.SFs>=1.0?"#d08b1e":"#c0392b");
+  colorMetric("dq",o.q<1?"#2e8b57":o.q<10?"#d08b1e":"#c0392b");
+  // armour tab
+  $("agM").textContent=fmt(a.Mg/1000,2);$("agD").textContent=fmt(a.Dg,2);
+  $("agWhy").textContent=a.rock?(a.useV?"Van der Meer governs (larger).":"Hudson governs (larger)."):"Concrete unit — Hudson only (Van der Meer is for rock).";
+  $("aKD").textContent=fmt(a.KD,1);$("aMh").textContent=fmt(a.Mh/1000,2);$("aReg").textContent=a.rock?a.reg:"n/a";
+  $("aMv").textContent=a.rock?fmt(a.Mv/1000,2):"—";$("ata").textContent=fmt(a.ta,2);$("aD").textContent=fmt(s.D,3);
+  // toe
+  $("tM").textContent=fmt(t.M,2);$("tD").textContent=fmt(t.Dn,2);$("tR").textContent=fmt(t.r,2);$("tNs").textContent=fmt(t.Ns,2);
+  $("rG").textContent=fmt(rearFac,2)+"× front";$("rD").textContent=fmt(rearDn,2);$("rNote").textContent=rearWhy;
+  // overtopping
+  $("oq").textContent=o.q<0.01?o.q.toExponential(1):fmt(o.q,1);$("oxi").textContent=fmt(o.xi,2);$("oR2").textContent=fmt(o.R2,2);
+  $("oRcHs").textContent=fmt(s.Rc/s.Hs,2);$("oCk").textContent=o.R2>s.Rc?"R2% > Rc (green water)":"R2% ≤ Rc";
+  const cl=o.q<0.1?["Safe","#2e8b57"]:o.q<1?["Caution","#1c7293"]:o.q<10?["Unsafe for people","#d08b1e"]:["Dangerous","#c0392b"];
+  $("oCls").textContent=cl[0]+" — EurOtop limit";$("oCls").style.color=cl[1];
+  // transmission
+  $("xKt").textContent=fmt(x.Kt,2);$("xHt").textContent=fmt(x.Ht,2);$("xxi").textContent=fmt(x.xi,2);
+  $("xRc").textContent=fmt(x.RcHs,2);$("xB").textContent=fmt(x.BHs,2);$("xE").textContent=fmt(x.Kt*x.Kt*100,0);
+  // reflection
+  $("fKr").textContent=fmt(f.Kr,2);$("fE").textContent=fmt(f.Kr*f.Kr*100,0);$("fxi").textContent=fmt(f.xi,2);$("fHr").textContent=fmt(f.Hr,2);
+  // caisson
+  $("cSFs").textContent=fmt(c.SFs,2);$("cSFo").textContent=fmt(c.SFo,2);$("cHmax").textContent=fmt(c.Hmax,2);
+  $("cP").textContent=fmt(c.P,0);$("cU").textContent=fmt(c.U,0);$("cp1").textContent=fmt(c.p1,1);
+  const ok=c.SFs>=1.2&&c.SFo>=1.2;$("cHL").style.borderLeftColor=ok?"#2e8b57":(c.SFs>=1&&c.SFo>=1?"#d08b1e":"#c0392b");
+  $("cVerdict").textContent=ok?"Both safety factors ≥ 1.2 — stable at the conceptual level.":"One or both SF below 1.2 — increase caisson weight/width.";
+  drawSection(R);
+}
+function colorMetric(id,c){$(id).parentElement.parentElement.style.borderTopColor=c;}
+
+// cross-section schematic (rubble mound)
+function drawSection(R){
+  const s=R.s,a=R.a,cv=$("sec"),ctx=cv.getContext("2d"),W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);ctx.fillStyle="#fff";ctx.fillRect(0,0,W,H);
+  const mL=30,mR=30,mT=16,mB=24,pw=W-mL-mR,ph=H-mT-mB;
+  const Dn=a.Dg;
+  const cota=s.cota,cotl=1.5,Vtop=Math.max(s.Rc,0.5)+0.3*s.Hs,Vbot=s.h,Ht=Vtop+Vbot;
+  const cw=s.Bc,Wm=cota*Ht+cw+cotl*Ht,ppm=Math.min(ph/Ht,(pw*0.8)/Wm);
+  const bottomY=mT+ph,swlY=bottomY-Vbot*ppm,YY=z=>swlY-z*ppm,sx=mL+pw*0.30;
+  const XX=z=>sx+cota*z*ppm;
+  const B={x:XX(-Vbot),y:bottomY},C1={x:XX(Vtop),y:YY(Vtop)},C2={x:C1.x+cw*ppm,y:C1.y},LT={x:C2.x+cotl*Ht*ppm,y:bottomY};
+  // sea
+  ctx.fillStyle="#dcebf3";ctx.beginPath();ctx.moveTo(mL,swlY);ctx.lineTo(B.x,swlY);ctx.lineTo(B.x,bottomY);ctx.lineTo(mL,bottomY);ctx.closePath();ctx.fill();
+  ctx.strokeStyle="#4a90c2";ctx.lineWidth=1.5;ctx.beginPath();for(let xx=mL;xx<=B.x;xx+=3){const tt=(xx-mL)/(B.x-mL);const y=swlY-(s.Hs*0.35*ppm)*Math.sin(tt*TAU*1.6)*(0.4+0.6*tt);xx==mL?ctx.moveTo(xx,y):ctx.lineTo(xx,y);}ctx.stroke();
+  // core
+  ctx.fillStyle="#cbd3d8";ctx.strokeStyle="#aeb9c0";ctx.beginPath();ctx.moveTo(B.x,B.y);ctx.lineTo(C1.x,C1.y);ctx.lineTo(C2.x,C2.y);ctx.lineTo(LT.x,LT.y);ctx.closePath();ctx.fill();ctx.stroke();
+  // armour band (front + crest)
+  ctx.strokeStyle="#9a8c78";ctx.lineCap="round";ctx.lineJoin="round";ctx.lineWidth=Math.max(2*a.kl*Dn*ppm,7);
+  ctx.beginPath();ctx.moveTo(B.x,B.y);ctx.lineTo(C1.x,C1.y);ctx.lineTo(C2.x,C2.y);ctx.stroke();ctx.lineWidth=1;
+  // stones
+  const rpx=Math.max(Dn/2*ppm,3),n=Math.max(3,Math.floor(Math.hypot(C1.x-B.x,C1.y-B.y)/(rpx*1.9)));
+  ctx.fillStyle="#8a7c66";ctx.strokeStyle="#5f5545";for(let i=0;i<=n;i++){const tt=i/n,xx=B.x+(C1.x-B.x)*tt,yy=B.y+(C1.y-B.y)*tt;ctx.beginPath();ctx.arc(xx,yy,rpx,0,TAU);ctx.fill();ctx.stroke();}
+  // toe stone
+  if(R.t){const trp=Math.max(R.t.Dn/2*ppm,2);ctx.fillStyle="#b0a48c";ctx.beginPath();ctx.arc(B.x+trp,bottomY-trp,trp,0,TAU);ctx.fill();ctx.strokeStyle="#5f5545";ctx.stroke();}
+  // SWL + seabed
+  ctx.strokeStyle="#2e6ca4";ctx.setLineDash([6,4]);ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(mL,swlY);ctx.lineTo(LT.x,swlY);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle="#2e6ca4";ctx.font="11px Segoe UI,Arial";ctx.textAlign="left";ctx.fillText("SWL",mL+2,swlY-4);
+  ctx.strokeStyle="#b8a980";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(mL,bottomY);ctx.lineTo(LT.x+6,bottomY);ctx.stroke();
+  // labels
+  ctx.fillStyle="#5f5545";ctx.font="11px Segoe UI,Arial";ctx.textAlign="left";ctx.fillText("armour Dn50="+fmt(Dn,2)+" m",(B.x+C1.x)/2-10,(B.y+C1.y)/2-2*a.kl*Dn*ppm/2-4);
+  ctx.fillStyle="#8a99a3";ctx.fillText("core",(C1.x+LT.x)/2-10,(C1.y+bottomY)/2+6);
+  ctx.fillStyle="#5d7079";ctx.textAlign="right";ctx.fillText("1:"+fmt(cota,2),C1.x-8,C1.y-4);
+  // Rc dimension
+  ctx.strokeStyle="#12324a";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(C2.x+8,swlY);ctx.lineTo(C2.x+8,C1.y);ctx.stroke();
+  ctx.fillStyle="#12324a";ctx.textAlign="left";ctx.fillText("Rc="+fmt(s.Rc,1)+" m",C2.x+11,(swlY+C1.y)/2);
+  $("secnote").innerHTML="Conceptual cross-section: front slope 1:"+fmt(cota,2)+", armour D<sub>n50</sub>="+fmt(Dn,2)+" m, crest freeboard R<sub>c</sub>="+fmt(s.Rc,1)+" m, toe stone at the base.";
+}
+
+// tabs
+$("tabs").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+  document.querySelectorAll("#tabs button").forEach(x=>x.classList.remove("on"));b.classList.add("on");
+  ["armour","toe","over","trans","refl","caisson"].forEach(t=>$("p_"+t).classList.toggle("hide",t!=b.dataset.t));});
+document.querySelectorAll("input,select").forEach(el=>el.addEventListener("input",update));
+
+$("rep").addEventListener("click",()=>{
+  const J=window.jspdf&&window.jspdf.jsPDF;if(!J){window.print();return;} const s=R.s;
+  const doc=new J({unit:"pt",format:"a4"}),P=40;let y=48;
+  doc.setFont("helvetica","bold");doc.setFontSize(16);doc.setTextColor(18,50,74);doc.text("Breakwater Designer — Conceptual Design Summary",P,y);y+=18;
+  doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(90,112,121);
+  doc.text("Published design formulae (Rock Manual, EurOtop, Goda, Van der Meer, d'Angremond) · M. N. Sahvelet, Troy Lab, Purdue",P,y);y+=20;
+  doc.setDrawColor(210,224,231);doc.line(P,y,555,y);y+=18;
+  doc.setFontSize(11);doc.setTextColor(26,42,54);doc.setFont("helvetica","bold");doc.text("Design conditions",P,y);y+=15;doc.setFont("helvetica","normal");doc.setFontSize(10);
+  doc.text("Hs="+s.Hs+" m, Tp="+s.Tp+" s, depth h="+s.h+" m, slope 1:"+s.cota+", Rc="+s.Rc+" m, crest B="+s.Bc+" m",P,y);y+=18;
+  const rows=[
+    ["Front armour (governing)",(R.a.Mg/1000).toFixed(2)+" t,  Dn50="+R.a.Dg.toFixed(2)+" m ("+(R.a.rock?(R.a.useV?"Van der Meer":"Hudson"):"Hudson")+")"],
+    ["Layer thickness",R.a.ta.toFixed(2)+" m"],
+    ["Toe stone",R.t.M.toFixed(2)+" t,  Dn50="+R.t.Dn.toFixed(2)+" m (Ns="+R.t.Ns.toFixed(2)+")"],
+    ["Rear armour (guidance)",R.rearFac.toFixed(2)+"x front,  Dn50="+R.rearDn.toFixed(2)+" m"],
+    ["Run-up R2%",R.o.R2.toFixed(2)+" m"],
+    ["Mean overtopping q",(R.o.q<0.01?R.o.q.toExponential(1):R.o.q.toFixed(1))+" l/s/m"],
+    ["Transmission Kt",R.x.Kt.toFixed(2)+"  (Ht="+R.x.Ht.toFixed(2)+" m)"],
+    ["Reflection Kr",R.f.Kr.toFixed(2)],
+    ["Caisson Hmax / P / U",R.c.Hmax.toFixed(2)+" m / "+R.c.P.toFixed(0)+" kN/m / "+R.c.U.toFixed(0)+" kN/m"],
+    ["Caisson stability","SF_slide="+R.c.SFs.toFixed(2)+",  SF_over="+R.c.SFo.toFixed(2)]];
+  doc.setFontSize(10);
+  rows.forEach(r=>{doc.setFont("helvetica","bold");doc.text(r[0],P,y);doc.setFont("helvetica","normal");doc.text(String(r[1]),210,y,{maxWidth:345});y+=15;});
+  y+=6;try{const img=$("sec").toDataURL("image/png"),w=515,h=w*280/1120;if(y+h>800){doc.addPage();y=48;}doc.addImage(img,"PNG",P,y,w,h);y+=h+10;}catch(e){}
+  if(y>770){doc.addPage();y=48;}
+  doc.setFontSize(7.5);doc.setTextColor(120,130,138);
+  doc.text(doc.splitTextToSize("Conceptual design only. Armour: Hudson (SPM) & Van der Meer (1988). Toe: Rock Manual/Van der Meer. Run-up & overtopping: EurOtop (2018). "
+    +"Transmission: d'Angremond, Van der Meer & De Jong (1996). Reflection: Zanuttigh & Van der Meer (2008). Caisson: Goda (2000). Verify against physical model tests for detailed design.",515),P,y);
+  doc.save("breakwater-design-summary.pdf");
+});
+
+update();
+window.addEventListener("resize",()=>{if(R.s)drawSection(R);});
+</script>
+</body>
+</html>
+
+{% endraw %}
