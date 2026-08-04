@@ -23,3 +23,6 @@ This page collects the web calculators and small utilities developed for Troy La
 
 ## Design Suites
 - [Breakwater Designer](/tools/breakwater-designer/)
+
+## Sediment Transport & Morphology
+- [Longshore Sediment Transport — Plan View (CERC, Kamphuis, van Rijn)](/longshore-transport/)
