@@ -26,3 +26,7 @@ This page collects the web calculators and small utilities developed for Troy La
 
 ## Sediment Transport & Morphology
 - [Longshore Sediment Transport — Plan View (CERC, Kamphuis, van Rijn)](/longshore-transport/)
+
+
+## Pipe Hydraulics
+- [Pipe Flow — EGL/HGL & Head Losses (Darcy–Weisbach, Colebrook)](/pipe-flow/)
