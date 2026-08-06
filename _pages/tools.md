@@ -30,3 +30,6 @@ This page collects the web calculators and small utilities developed for Troy La
 
 ## Pipe Hydraulics
 - [Pipe Flow — EGL/HGL & Head Losses (Darcy–Weisbach, Colebrook)](/pipe-flow/)
+
+## Coastal Engineering Tools (TROY LAB)
+- [Interactive coastal & hydraulics calculators for TROYLAB](https://mnsahvelet.github.io/coastal-tools/)
