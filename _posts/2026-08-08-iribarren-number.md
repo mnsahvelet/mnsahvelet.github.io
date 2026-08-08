@@ -27,7 +27,9 @@ The same wave breaks in completely different ways depending on the slope it meet
        style="width:100%;height:auto;border-radius:8px;">
   <figcaption style="font-size:0.85em;color:#666;margin-top:0.4rem;">
     The three breaker types. As the slope steepens (ξ increases), the same wave shifts from
-    spilling, to the classic plunging curl, to a non-breaking surge.
+    spilling, to the classic plunging curl, to a non-breaking surge. (Image by Byron Inouye)
+
+
   </figcaption>
 </figure>
 
