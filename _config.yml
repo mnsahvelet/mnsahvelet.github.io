@@ -4,9 +4,9 @@
 # Basic Site Settings
 locale                   : "en-US"
 site_theme               : "default"   # "default", "air", "sunrise", "mint", "dirt", "contrast"
-title                    : "Muhammed N. Sahvelet"
+title                    : "Muhammed Nedim Sahvelet"
 title_separator          : "-"
-name                     : &name "Muhammed N. Sahvelet"
+name                     : &name "Muhammed Nedim Sahvelet"
 description              : &description "PhD student in Hydraulics and Hydrology at Purdue University. Research interests include nearshore wave transformation, longshore sediment transport, and coastal modeling."
 
 url                      : "https://mnsahvelet.github.io"
@@ -16,7 +16,7 @@ repository               : "mnsahvelet/mnsahvelet.github.io"
 # Site Author (sidebar)
 author:
   avatar           : "profile.png"   # put your image in /images/profile.png
-  name             : "Muhammed N. Sahvelet"
+  name             : "Muhammed Nedim Sahvelet"
   pronouns         : "he/him"
   bio              : "PhD student, Hydraulics and Hydrology, Purdue University. Nearshore waves, longshore sediment transport, coastal processes."
   location         : "West Lafayette, IN, USA"
