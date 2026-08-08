@@ -20,25 +20,7 @@ It compares how steep the structure or beach is (`tanα`) to how steep the wave 
 
 ## It tells you how a wave breaks
 
-The same wave breaks in completely different ways depending on the slope it meets:
 
-<figure style="max-width:420px;margin:1.5rem auto;text-align:center;">
-  <img src="/images/breaker-types.png" alt="Plunging, spilling and surging breakers"
-       style="width:100%;height:auto;border-radius:8px;">
-  <figcaption style="font-size:0.85em;color:#666;margin-top:0.4rem;">
-    The three breaker types. As the slope steepens (ξ increases), the same wave shifts from
-    spilling, to the classic plunging curl, to a non-breaking surge. (Image by Byron Inouye). Original Figure here: https://manoa.hawaii.edu/exploringourfluidearth/physical/coastal-interactions/wave-coast-interactions 
-
-
-  </figcaption>
-</figure>
-
-Low `ξ` (flat beach, steep wave) gives you **spilling** whitecaps that foam gently down
-the face. Around `ξ ≈ 0.5–3` you get the **plunging** breaker every surfer chases — the
-crest throws forward and curls over. Higher still, on a steep structure, the wave doesn't
-really break at all: it **surges** up and down the slope. I built a small
-[wave-routing tool](https://mnsahvelet.github.io/coastal-tools/wave-routing.html) that
-computes the breaker type live if you want to feel this.
 
 ## The same number keeps showing up
 
